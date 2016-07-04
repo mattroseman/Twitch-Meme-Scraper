@@ -6,7 +6,7 @@ arguments: url of twitch site
 using:
     http://code.activestate.com/recipes/299411-connect-to-an-irc-server-and-store-messages-into-a/
 """
-import sys, socket, string
+import sys, socket, string, datetime
 
 SERVER = 'irc.twitch.tv'
 PORT = 6667
@@ -61,7 +61,8 @@ def main():
             if (line[0] == 'PING'):
                 send_data('PONG %s' % line[1])
             if (line[1] == 'PRIVMSG'):
-                print ' '.join(line[3:])[1:]
+                print (datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
+                       + ' | ' + ' '.join(line[3:])[1:])
 
             
 
