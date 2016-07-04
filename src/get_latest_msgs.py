@@ -55,12 +55,14 @@ def main():
         readbuffer = temp.pop()
 
         for line in temp:
-            print line
             line = string.rstrip(line)
             line = string.split(line)
 
             if (line[0] == 'PING'):
                 send_data('PONG %s' % line[1])
+            if (line[1] == 'PRIVMSG'):
+                print ' '.join(line[3:])[1:]
+
             
 
 if __name__ == '__main__':
