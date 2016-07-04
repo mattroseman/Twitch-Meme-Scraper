@@ -12,7 +12,6 @@ SERVER = 'irc.twitch.tv'
 PORT = 6667
 NICKNAME = 'mroseman_bot'
 PASSWORD = 'oauth:glz9hskrj3umqvzix5876fc6fdj0u9'
-CHANNEL = '#geekandsundry'
 
 BUFFER_SIZE = 1024
 
@@ -41,9 +40,13 @@ def login(nickname, password=None):
     send_data("NICK %s" % nickname)
 
 def main():
+    if len(sys.argv) != 2:
+        print 'missing channel name argument'
+        return
+    channel = '#%s' %  sys.argv[1]
     irc_conn()
     login(NICKNAME, PASSWORD) 
-    join(CHANNEL)
+    join(channel)
     readbuffer = ""
 
     while 1:
