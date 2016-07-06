@@ -39,11 +39,14 @@ def login(nickname, password=None):
     send_data("PASS %s" % password)
     send_data("NICK %s" % nickname)
 
+
 def main():
     if len(sys.argv) != 2:
         print 'missing channel name argument'
         return
     channel = '#%s' %  sys.argv[1]
+    #  log file
+    log = open('../log/%s_log.txt' % channel , 'w+')
     irc_conn()
     login(NICKNAME, PASSWORD) 
     join(channel)
@@ -61,8 +64,8 @@ def main():
             if (line[0] == 'PING'):
                 send_data('PONG %s' % line[1])
             if (line[1] == 'PRIVMSG'):
-                print (datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
-                       + ' | ' + ' '.join(line[3:])[1:])
+                log.write(datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
+                       + ' | ' + ' '.join(line[3:])[1:] + '\n')
 
             
 
