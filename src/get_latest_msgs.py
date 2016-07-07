@@ -47,7 +47,7 @@ def main():
 
     #  log file
     try:
-        log = open('../log/%s_log.txt' % sys.argv[1], 'w+')
+        log = open('../log/%s_log.txt' % sys.argv[1], 'a')
     except IOError:
         print 'could not open file'
     channel = '#%s' %  sys.argv[1]
