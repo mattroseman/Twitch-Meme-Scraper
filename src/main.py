@@ -1,13 +1,12 @@
 from bots import DataBot
-import threading
+from threading import Thread
 import MySQLdb as mdb
 import sys
-threads = []
 def attach_bot(name, stream_id):
     """thread worker function"""
     print stream_id, name 
     bot = DataBot.DataBot('#' + name, stream_id)
-    bot.log_chat()
+    # bot.log_chat()
     return
 try:
     con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
@@ -16,10 +15,11 @@ try:
     cur = con.cursor(mdb.cursors.DictCursor)
     cur.execute("SELECT * FROM streams")
     rows = cur.fetchall()
+
     for row in rows:
-        t = threading.Thread(target=attach_bot(row['name'], row['id']))
-        threads.append(t)
-        t.start()
+        bot = DataBot.DataBot('#' + row['name'], row['id'])
+    while True:
+        pass
 except mdb.Error, e:
   
     print "Error %d: %s" % (e.args[0],e.args[1])
@@ -29,5 +29,5 @@ finally:
     if con:    
         con.close()
 
-# myBot = DataBot.DataBot("#esl_csgo")
+# myBot = DataBot.DataBot("#esl_csgo", 1)
 # myBot.log_chat()

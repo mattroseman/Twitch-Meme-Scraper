@@ -1,5 +1,6 @@
 import MySQLdb as mdb
 import sys
+from threading import Thread
 
 """
 Script to get latest chat messages from a twitch stream and add them to a file
@@ -10,7 +11,7 @@ using:
 
 import sys, socket, string, datetime
 
-class DataBot():
+class DataBot(Thread):
 
     # make the cursor a dictionary
     # can now reference rows as a dictions
@@ -25,6 +26,8 @@ class DataBot():
     
 
     def __init__(self, channel, channel_id):
+        Thread.__init__(self)
+        self.daemon = True
     #  open socket
         # self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
@@ -39,6 +42,7 @@ class DataBot():
         self.join(channel)
 
         print "succesfully joined channel"
+        self.start()
     
     #  open connection
     def irc_conn(self):
@@ -67,7 +71,7 @@ class DataBot():
         # optionally print the messages
         # print timestamp, username, msg
 
-    def log_chat(self):
+    def run(self):
         readbuffer = ""
 
         while 1:
