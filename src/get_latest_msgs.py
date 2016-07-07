@@ -44,9 +44,14 @@ def main():
     if len(sys.argv) != 2:
         print 'missing channel name argument'
         return
-    channel = '#%s' %  sys.argv[1]
+
     #  log file
-    log = open('../log/%s_log.txt' % channel , 'w+')
+    try:
+        log = open('../log/%s_log.txt' % sys.argv[1], 'w+')
+    except IOError:
+        print 'could not open file'
+    channel = '#%s' %  sys.argv[1]
+
     irc_conn()
     login(NICKNAME, PASSWORD) 
     join(channel)
@@ -64,8 +69,11 @@ def main():
             if (line[0] == 'PING'):
                 send_data('PONG %s' % line[1])
             if (line[1] == 'PRIVMSG'):
-                log.write(datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
-                       + ' | ' + ' '.join(line[3:])[1:] + '\n')
+                try:
+                    log.write(datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
+                              + ' | ' + ' '.join(line[3:])[1:] + '\n')
+                except IOError:
+                    print 'error printing to file'
 
             
 
