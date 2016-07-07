@@ -1,5 +1,12 @@
-# Twitch-Meme-Scrapper
-Find the dankest memes off twitch
+# Twitch-Meme-Scraper
+Dependencies
+```
+sudo apt-get install python-mysqldb
+```
 
-notes
-- looks like html nodes with class="message" contain the twitch chat
+Reference
+```
+http://zetcode.com/db/mysqlpython/
+```
+
+
