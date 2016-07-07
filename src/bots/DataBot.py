@@ -50,9 +50,6 @@ class DataBot():
     
     
     def log_chat(self):
-        if len(sys.argv) != 2:
-            print 'missing channel name argument'
-            return
     
         readbuffer = ""
         username = ""
@@ -85,5 +82,5 @@ class DataBot():
                     print timestamp
                     print username
                     print msg
-myBot = DataBot("beyondthesummit")
-myBot.log_chat()
+# myBot = DataBot("beyondthesummit")
+# myBot.log_chat()
