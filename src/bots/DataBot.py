@@ -3,8 +3,9 @@ import sys
 from threading import Thread
 
 """
-Script to get latest chat messages from a twitch stream and add them to a file
-arguments: url of twitch site
+Script to get latest chat messages from a twitch stream and add them to database 
+Implements Thread interface
+
 using:
     http://code.activestate.com/recipes/299411-connect-to-an-irc-server-and-store-messages-into-a/
 """
@@ -13,35 +14,37 @@ import sys, socket, string, datetime
 
 class DataBot(Thread):
 
-    # make the cursor a dictionary
-    # can now reference rows as a dictions
-    # print row['id']
-
+    # DO NOT CHANGE
     SERVER = 'irc.twitch.tv'
     PORT = 6667
     NICKNAME = 'mroseman_bot'
     PASSWORD = 'oauth:glz9hskrj3umqvzix5876fc6fdj0u9'
     
     BUFFER_SIZE = 1024
-    
 
+    
+    # default constructor
     def __init__(self, channel, channel_id):
+        # initialize threading
         Thread.__init__(self)
         self.daemon = True
-    #  open socket
-        # self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # connect to DB
+        # TODO handle this more securely
         self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
         self.con.autocommit(True)
         self.cur = self.con.cursor(mdb.cursors.DictCursor)
 
+        # create IRC socket object 
         self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        # join the channel and authenticate
         self.channel_id = channel_id
         self.irc_conn()
         self.login(self.NICKNAME, self.PASSWORD)
         self.join(channel)
 
-        print "succesfully joined channel"
+        print "succesfully joined channel " + channel
+        # execute thread
         self.start()
     
     #  open connection
@@ -66,11 +69,13 @@ class DataBot(Thread):
         self.send_data("NICK %s" % nickname)
     
     
+    # insert to database
     def insert_message(self, username, msg, timestamp):
         self.cur.execute("INSERT INTO messages(stream_id, user, message, timestamp) VALUES(%s, %s, %s, %s)", (self.channel_id, username, msg, timestamp))
         # optionally print the messages
         # print timestamp, username, msg
 
+    # override run function from interface
     def run(self):
         readbuffer = ""
 
