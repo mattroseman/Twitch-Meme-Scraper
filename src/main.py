@@ -29,10 +29,5 @@ finally:
     if con:    
         con.close()
 
-
-
 # myBot = DataBot.DataBot("#esl_csgo")
 # myBot.log_chat()
-
-# secondBot = DataBot.DataBot("#" + channels[0])
-# secondBot.log_chat()
