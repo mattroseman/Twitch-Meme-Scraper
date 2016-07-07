@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#/usr/bin/python
 
 """
 Script to get latest chat messages from a twitch stream and add them to a file

@@ -1,4 +1,5 @@
-#!/usr/bin/python
+import MySQLdb as mdb
+import sys
 
 """
 Script to get latest chat messages from a twitch stream and add them to a file
@@ -10,6 +11,15 @@ using:
 import sys, socket, string, datetime
 
 class DataBot():
+
+    stream_id = '1'
+    con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
+    con.autocommit(True)
+    # make the cursor a dictionary
+    # can now reference rows as a dictions
+    # print row['id']
+    cur = con.cursor(mdb.cursors.DictCursor)
+
     SERVER = 'irc.twitch.tv'
     PORT = 6667
     NICKNAME = 'mroseman_bot'
@@ -20,17 +30,16 @@ class DataBot():
     IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def __init__(self, channel):
-        print "created bot"
     #  open socket
         # self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.irc_conn()
         self.login(self.NICKNAME, self.PASSWORD)
         self.join(channel)
+        print "succesfully joined channel"
     
     #  open connection
     def irc_conn(self):
         self.IRC.connect((self.SERVER, self.PORT))
-        print "connected"
     
     #  send data through socket
     def send_data(self, command):
@@ -50,8 +59,13 @@ class DataBot():
         self.send_data("NICK %s" % nickname)
     
     
+    def insert_message(self, username, msg, timestamp):
+        self.cur.execute("INSERT INTO messages(stream_id, user, message, timestamp) VALUES(%s, %s, %s, %s)", (self.stream_id, username, msg, timestamp))
+        print timestamp
+        print username
+        print msg
+
     def log_chat(self):
-    
         readbuffer = ""
         username = ""
         timestamp = ""
@@ -76,12 +90,9 @@ class DataBot():
                 msg = ' '.join(line[3:])[1:]
     
                 if (line[0] == 'PING'):
-                    send_data('PONG %s' % line[1])
+                    self.send_data('PONG %s' % line[1])
                 if (line[1] == 'PRIVMSG'):
                     # comment below code to disable printing to terminal
-                    print timestamp
-                    print username
-                    print msg
-            print "entering while loop"
-# myBot = DataBot("beyondthesummit")
+                    self.insert_message(username, msg, timestamp)
+# myBot = DataBot("esl_csgo")
 # myBot.log_chat()
