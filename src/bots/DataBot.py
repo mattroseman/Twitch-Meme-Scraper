@@ -6,6 +6,7 @@ arguments: url of twitch site
 using:
     http://code.activestate.com/recipes/299411-connect-to-an-irc-server-and-store-messages-into-a/
 """
+
 import sys, socket, string, datetime
 
 class DataBot():
@@ -57,7 +58,6 @@ class DataBot():
         msg = ""
     
         while 1:
-            print "entering while loop"
             readbuffer=readbuffer + self.get_data()
             print readbuffer
             temp = string.split(readbuffer, '\n')
@@ -82,5 +82,6 @@ class DataBot():
                     print timestamp
                     print username
                     print msg
+            print "entering while loop"
 # myBot = DataBot("beyondthesummit")
 # myBot.log_chat()
