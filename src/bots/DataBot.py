@@ -61,38 +61,29 @@ class DataBot():
     
     def insert_message(self, username, msg, timestamp):
         self.cur.execute("INSERT INTO messages(stream_id, user, message, timestamp) VALUES(%s, %s, %s, %s)", (self.stream_id, username, msg, timestamp))
-        print timestamp
-        print username
-        print msg
+        # optionally print the messages
+        # print timestamp, username, msg
 
     def log_chat(self):
         readbuffer = ""
-        username = ""
-        timestamp = ""
-        msg = ""
-    
+
         while 1:
             readbuffer=readbuffer + self.get_data()
-            print readbuffer
             temp = string.split(readbuffer, '\n')
             readbuffer = temp.pop()
     
             for line in temp:
                 line = string.rstrip(line)
                 line = string.split(line)
-                print line[0]
-                tempp = line[0].find('!')
-                if tempp != '-1':
-                    username = line[0].replace(":", "",  1)
-                    username = username[:tempp - 1]
-    
-                timestamp = datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
-                msg = ' '.join(line[3:])[1:]
-    
+                
                 if (line[0] == 'PING'):
                     self.send_data('PONG %s' % line[1])
                 if (line[1] == 'PRIVMSG'):
-                    # comment below code to disable printing to terminal
+                    username = line[0].replace(":", "",  1)
+                    index = line[0].find('!')
+                    username = username[:index - 1]
+    
+                    timestamp = datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
+                    msg = ' '.join(line[3:])[1:]
+
                     self.insert_message(username, msg, timestamp)
-# myBot = DataBot("esl_csgo")
-# myBot.log_chat()
