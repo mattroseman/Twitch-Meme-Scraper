@@ -7,6 +7,7 @@ sudo apt-get install python-mysqldb
 Reference
 ```
 http://zetcode.com/db/mysqlpython/
+http://code.activestate.com/recipes/299411-connect-to-an-irc-server-and-store-messages-into-a/
 ```
 
 TODO: 
