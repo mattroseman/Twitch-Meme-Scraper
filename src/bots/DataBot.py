@@ -12,13 +12,9 @@ import sys, socket, string, datetime
 
 class DataBot():
 
-    stream_id = '1'
-    con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
-    con.autocommit(True)
     # make the cursor a dictionary
     # can now reference rows as a dictions
     # print row['id']
-    cur = con.cursor(mdb.cursors.DictCursor)
 
     SERVER = 'irc.twitch.tv'
     PORT = 6667
@@ -27,14 +23,21 @@ class DataBot():
     
     BUFFER_SIZE = 1024
     
-    IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def __init__(self, channel):
+    def __init__(self, channel, channel_id):
     #  open socket
         # self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
+        self.con.autocommit(True)
+        self.cur = self.con.cursor(mdb.cursors.DictCursor)
+
+        self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.channel_id = channel_id
         self.irc_conn()
         self.login(self.NICKNAME, self.PASSWORD)
         self.join(channel)
+
         print "succesfully joined channel"
     
     #  open connection
@@ -60,7 +63,7 @@ class DataBot():
     
     
     def insert_message(self, username, msg, timestamp):
-        self.cur.execute("INSERT INTO messages(stream_id, user, message, timestamp) VALUES(%s, %s, %s, %s)", (self.stream_id, username, msg, timestamp))
+        self.cur.execute("INSERT INTO messages(stream_id, user, message, timestamp) VALUES(%s, %s, %s, %s)", (self.channel_id, username, msg, timestamp))
         # optionally print the messages
         # print timestamp, username, msg
 
