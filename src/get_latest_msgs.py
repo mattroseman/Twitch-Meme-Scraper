@@ -66,14 +66,18 @@ def main():
             line = string.rstrip(line)
             line = string.split(line)
 
+            log_msg = datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y") + \
+                      ' | ' + ' '.join(line[3:])[1:] + '\n'
+
             if (line[0] == 'PING'):
                 send_data('PONG %s' % line[1])
             if (line[1] == 'PRIVMSG'):
                 try:
-                    log.write(datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
-                              + ' | ' + ' '.join(line[3:])[1:] + '\n')
+                    log.write(log_msg)
                 except IOError:
                     print 'error printing to file'
+                #Comment below code to disable printing to terminal
+                print log_msg
 
             
 
