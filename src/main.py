@@ -8,6 +8,8 @@ try:
     con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
 
     con.autocommit(True)
+    # mysql terminates idle connection (8 hrs). ping(true) attempts a reconnect if con has been terminated
+    con.ping(True)
     cur = con.cursor(mdb.cursors.DictCursor)
 
     # get the list of channels to listen on

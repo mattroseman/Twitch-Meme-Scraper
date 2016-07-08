@@ -32,6 +32,7 @@ class DataBot(Thread):
         # TODO handle this more securely
         self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
         self.con.autocommit(True)
+        self.con.ping(True)
         self.cur = self.con.cursor(mdb.cursors.DictCursor)
 
         # create IRC socket object 
