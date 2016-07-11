@@ -1,7 +1,8 @@
 from bots import DataBot
-from threading import Thread
+# from threading import Thread
 import MySQLdb as mdb
 import sys
+
 # tryexcept block for initial mysql connection
 try:
     # TODO move these credentials to a separate file

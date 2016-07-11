@@ -1,6 +1,6 @@
 import MySQLdb as mdb
-import sys
 from threading import Thread
+import sys, socket, string, datetime
 
 """
 Script to get latest chat messages from a twitch stream and add them to database 
@@ -10,7 +10,6 @@ using:
     http://code.activestate.com/recipes/299411-connect-to-an-irc-server-and-store-messages-into-a/
 """
 
-import sys, socket, string, datetime
 
 class DataBot(Thread):
 
