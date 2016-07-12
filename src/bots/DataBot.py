@@ -29,10 +29,10 @@ class DataBot(Thread):
         self.daemon = True
         # connect to DB
         # TODO handle this more securely
-        self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
-        self.con.autocommit(True)
-        self.con.ping(True)
-        self.cur = self.con.cursor(mdb.cursors.DictCursor)
+        # self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
+        # self.con.autocommit(True)
+        # self.con.ping(True)
+        # self.cur = self.con.cursor(mdb.cursors.DictCursor)
 
         # create IRC socket object 
         self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -80,6 +80,7 @@ class DataBot(Thread):
         readbuffer = ""
 
         while 1:
+            # self.con.close()
             readbuffer=readbuffer + self.get_data()
             temp = string.split(readbuffer, '\n')
             readbuffer = temp.pop()
@@ -97,5 +98,11 @@ class DataBot(Thread):
     
                     timestamp = datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
                     msg = ' '.join(line[3:])[1:]
+                    self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
+                    self.con.autocommit(True)
+                    self.con.ping(True)
+                    self.cur = self.con.cursor(mdb.cursors.DictCursor)
 
                     self.insert_message(username, msg, timestamp)
+
+                    self.con.close()
