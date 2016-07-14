@@ -17,5 +17,9 @@ except ConfigParser.NoOptionError as e:
            '{1}').format(e.errno, e.strerror)
     sys.exit()
 
-print ('database name: {0}\nhostname: {1}\nip address: {2}\nuser: {3}\n' +
-       'password: {4}').format(db_name, hostname, ip_address, user, password)
+db = MySQLdb.connect(host=hostname,
+                     user=user,
+                     passwd=password,
+                     db=db_name)
+
+cur = db.cursor()
