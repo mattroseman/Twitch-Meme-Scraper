@@ -2,6 +2,10 @@
 import sys
 from db_connect import SQLConnection
 
+"""
+used libraries: http://matplotlib.org/
+"""
+
 con = SQLConnection()
 
 def main():
