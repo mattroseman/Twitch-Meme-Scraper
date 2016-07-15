@@ -25,7 +25,7 @@ class SQLConnection:
                             passwd=password,
                             db=db_name)
 
-        self.cur = db.cursor()
+        self.cur = self.db.cursor()
 
     def query(self, query_string):
         """take in a query string and simply pass it on to the database"""
