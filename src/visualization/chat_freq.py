@@ -30,7 +30,7 @@ def get_time(utc_date):
 
 def main():
     #  query the database for just message times and nothing else
-    times = con.query('SELECT timestamp FROM messages', 'query.csv')
+    con.query('messages', 'timestamp', 'query.csv')
     print ('database query completed')
 
     print (times.info())
