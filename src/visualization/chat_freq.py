@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, re
+import sys, re, time
 from datetime import datetime
 from db_connect import SQLConnection
 import numpy as np
@@ -12,12 +12,9 @@ used libraries: http://matplotlib.org/
 frequency_interval = 60*24
 con = SQLConnection()
 
-"""
-plt.figure(figsize=(8,6), dpi=80)
-plt.subplot(111)
-"""
+plt.figure(figsize=(30, 18), dpi=80)
 
-def get_date(utc_date):
+def get_time(utc_date):
     """takes a utc string date and finds the minutes since epoch"""
     try:
         date = datetime.strptime(utc_date, '%b %d %H:%M:%S %Y')
@@ -25,7 +22,7 @@ def get_date(utc_date):
         print ('the utc date given was not in the correct format\n' +
                'should be: \"%b %d %H:%M:%S %Y\"')
         return None
-    return date
+    return int(round(time.mktime(date.timetuple()) / 60))
 
 
 def main():
@@ -35,31 +32,32 @@ def main():
 
     print (times[0][0])
     print (times[-1][0])
-    start_day = get_date(times[0][0]).day
-    end_day = get_date(times[-1][0]).day
-    print (start_day)
-    print (end_day)
+    start_min = get_time(times[0][0])
+    end_min = get_time(times[-1][0])
+    print (end_min - start_min + 1)
 
-    #  TODO this won't work accross multiple months
-    day_freq = [0] * (end_day - start_day + 1)
+    min_freq = [0] * (end_min - start_min + 1)
 
     #  for every message time
     for time in times:
-        day_freq[get_date(time[0]).day - start_day] += 1
+        #  at index (delta min) increment frequency
+        min_freq[get_time(time[0]) - start_min] += 1
 
-    day_axis = np.array(range(start_day, end_day + 1))
-    freq_axis = np.array(day_freq)
+    min_axis = np.array(range(start_min, end_min + 1))
+    freq_axis = np.array(min_freq)
 
-    print (day_axis)
-    print (freq_axis)
+    plt.plot(min_axis, freq_axis, color='blue', linewidth=1.0, linestyle='-')
 
-    plt.plot(day_axis, freq_axis, color='blue', linewidth=1.0, linestyle='-')
-
-    plt.xlim(day_axis.min()*1.1, day_axis.max()*1.1)
+    plt.xlim(min_axis.min(), min_axis.max())
     plt.ylim(0, freq_axis.max()*1.1)
 
-    plt.xticks(np.linspace(start_day, end_day, 1, endpoint=True))
-    plt.yticks(np.linspace(0, freq_axis.max(), 1, endpoint=True))
+    print (range(start_min, end_min + 1, 60))
+
+    #  show ticks every hour
+    plt.xticks(np.array(range(start_min, end_min + 1, 60)))
+    plt.yticks(np.array(range(0, freq_axis.max(), 100)))
+
+    plt.savefig("figures/test.png", dpi=72)
 
     plt.show()
 
