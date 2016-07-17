@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, re, time
+import sys, re, time, pandas
 from datetime import datetime
 from db_connect import SQLConnection
 import numpy as np
@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 """
 used libraries: http://matplotlib.org/
 """
- #  interval measured in minutes, so 60min=hour 24hr=day
+#  the name of the column in the database that contains the timestamp
+timestamp_col = 'timestamp'
+
+#  interval measured in minutes, so 60min=hour 24hr=day
 frequency_interval = 60*24
 con = SQLConnection()
 
@@ -28,20 +31,22 @@ def get_time(utc_date):
 def main():
     #  query the database for just message times and nothing else
     times = con.query("SELECT timestamp FROM messages")
-    con.close_connection()
+    print ('database query completed')
 
-    print (times[0][0])
-    print (times[-1][0])
-    start_min = get_time(times[0][0])
-    end_min = get_time(times[-1][0])
+    print (times.info())
+
+    print (times[timestamp_col].iloc[0])
+    print (times[timestamp_col].iloc[-1])
+    start_min = get_time(times[timestamp_col].iloc[0])
+    end_min = get_time(times[timestamp_col].iloc[-1])
     print (end_min - start_min + 1)
 
     min_freq = [0] * (end_min - start_min + 1)
 
     #  for every message time
-    for time in times:
+    for time in times[timestamp_col]:
         #  at index (delta min) increment frequency
-        min_freq[get_time(time[0]) - start_min] += 1
+        min_freq[get_time(time) - start_min] += 1
 
     min_axis = np.array(range(start_min, end_min + 1))
     freq_axis = np.array(min_freq)
