@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, ConfigParser, MySQLdb
+import sys, ConfigParser, sqlalchemy, pandas
 
 class SQLConnection:
     """Used to connect to a SQL database and send queries to it"""
@@ -20,20 +20,15 @@ class SQLConnection:
                 '{1}').format(e.errno, e.strerror)
             sys.exit()
 
-        self.db = MySQLdb.connect(host=hostname,
-                            user=user,
-                            passwd=password,
-                            db=db_name)
-
-        self.cur = self.db.cursor()
+        sql_con_string = 'mysql://{0}:{1}@{2}/{3}'.format(user,
+                                                          password,
+                                                          hostname,
+                                                          db_name)
+        self.engine = sqlalchemy.create_engine(sql_con_string)
 
     def query(self, query_string):
-        """take in a query string and simply pass it on to the database"""
-        self.cur.execute(query_string)
-
-        #  an array of arrays that is the query result table
-        return self.cur.fetchall()
-
-    def close_connection(self):
-        """close the database connection"""
-        self.db.close()
+        """
+        take in a query string and simply pass it on to the database
+        @return: a pandas dataframe object of the query results
+        """
+        return pandas.read_sql_query(query_string, self.engine)
