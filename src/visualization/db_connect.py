@@ -1,6 +1,8 @@
 #!/usr/bin/python
 import sys, ConfigParser, sqlalchemy, pandas
 
+_chunk_size = 100 #  number of rows for a query chunk
+
 class SQLConnection:
     """Used to connect to a SQL database and send queries to it"""
     def __init__(self):
@@ -26,9 +28,12 @@ class SQLConnection:
                                                           db_name)
         self.engine = sqlalchemy.create_engine(sql_con_string)
 
-    def query(self, query_string):
+    def query(self, query_string, output_file):
         """
         take in a query string and simply pass it on to the database
         @return: a pandas dataframe object of the query results
         """
-        return pandas.read_sql_query(query_string, self.engine)
+        for chunk in pandas.read_sql_query(query_string, self.engine,
+                                           chunksize=_chunk_size):
+            #  append chunk to csv
+            chunk.to_csv(output_file, sep=',', mode='a', encoding='utf-8')
