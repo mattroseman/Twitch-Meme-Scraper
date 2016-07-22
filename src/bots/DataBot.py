@@ -43,7 +43,7 @@ class DataBot(Thread):
         self.login(self.NICKNAME, self.PASSWORD)
         self.join(channel)
 
-        print "succesfully joined channel " + channel
+        print ("succesfully joined channel " + channel)
         # execute thread
         self.start()
     
@@ -70,8 +70,8 @@ class DataBot(Thread):
     
     
     # insert to database
-    def insert_message(self, username, msg, timestamp):
-        self.cur.execute("INSERT INTO messages(stream_id, user, message, timestamp) VALUES(%s, %s, %s, %s)", (self.channel_id, username, msg, timestamp))
+    def insert_message(self, username, msg):
+        self.cur.execute("INSERT INTO messages(stream_id, user, message, time) VALUES(%s, %s, %s, NOW())", (self.channel_id, username, msg))
         # optionally print the messages
         # print timestamp, username, msg
 
@@ -96,13 +96,12 @@ class DataBot(Thread):
                     index = line[0].find('!')
                     username = username[:index - 1]
     
-                    timestamp = datetime.datetime.utcnow().strftime("%b %d %H:%M:%S %Y")
                     msg = ' '.join(line[3:])[1:]
                     self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
                     self.con.autocommit(True)
                     self.con.ping(True)
                     self.cur = self.con.cursor(mdb.cursors.DictCursor)
 
-                    self.insert_message(username, msg, timestamp)
+                    self.insert_message(username, msg)
 
                     self.con.close()
