@@ -176,3 +176,15 @@ fig.append_trace(trace1, 1, 2)
 
 fig['layout'].update(layout)
 py.plot(fig, filename='significant_memes')
+
+
+
+# chart to show which channels have users in common
+# https://plot.ly/python/chord-diagram/
+
+# chart to show real time streaming data
+# show twitch message frequencies in real time
+# https://plot.ly/python/streaming-tutorial/
+
+# another visualization to show which memes are most popular over time
+# https://plot.ly/python/filled-area-plots/
