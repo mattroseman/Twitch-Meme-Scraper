@@ -40,6 +40,10 @@ WHILE (increment <= toplimit) DO
 END $$
 DELIMITER ;
 ```
+To call updateTimestamp just do 
+```
+call updateTimestamp();
+```
 
 TODO: 
   1. Create/Destroy/Join threads to properly terminate program
