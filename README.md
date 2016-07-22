@@ -17,6 +17,27 @@ http://stackoverflow.com/questions/23100704/running-infinite-loops-using-threads
 https://pymotw.com/2/threading/ -- Daemon threading
 
 ```
+MYSQL Function Syntax
+(this is the current function we have)
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS `updateTimestamp` $$
+CREATE DEFINER=`root`@`%` PROCEDURE `updateTimestamp`()
+BEGIN
+DECLARE increment INT;
+DECLARE toplimit INT;
+DECLARE formatThis VARCHAR(255);
+DECLARE formatted DATETIME;
+SET increment = 1;
+SET toplimit = (SELECT COUNT(id) FROM messages);
+WHILE (increment <= toplimit) DO
+    SET formatThis = (SELECT timestamp FROM `messages` WHERE id = increment);
+    SET formatted = str_to_date(formatThis, '%b %d %T %Y');
+    UPDATE `messages` SET `time` = formatted WHERE `messages`.`id` = increment;
+    SET increment = increment + 1;
+  END WHILE;
+END $$
+DELIMITER ;
 
 TODO: 
   1. Create/Destroy/Join threads to properly terminate program
