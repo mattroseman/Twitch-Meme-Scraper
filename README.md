@@ -19,7 +19,7 @@ https://pymotw.com/2/threading/ -- Daemon threading
 ```
 MYSQL Function Syntax
 (this is the current function we have)
-
+'''
 DELIMITER $$
 DROP PROCEDURE IF EXISTS `updateTimestamp` $$
 CREATE DEFINER=`root`@`%` PROCEDURE `updateTimestamp`()
@@ -38,6 +38,7 @@ WHILE (increment <= toplimit) DO
   END WHILE;
 END $$
 DELIMITER ;
+'''
 
 TODO: 
   1. Create/Destroy/Join threads to properly terminate program
