@@ -9,9 +9,9 @@ try:
     con = SQLConnection()
 
     # get the list of channels to listen on
-    df = con.query("SELECT * FROM Users WHERE Monitor=TRUE")
+    rows = con.query("SELECT * FROM Users WHERE Monitor=TRUE")
 
-    for index, row in df.iterrows():
+    for row in rows:
         # for each channel, create a bot instance
         bot = DataBot.DataBot(row['ID'], '#' + row['UserName'])
     # keep the main thread alive in order to keep child threads alive as well
