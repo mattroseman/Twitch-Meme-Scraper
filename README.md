@@ -21,4 +21,6 @@ https://pymotw.com/2/threading/ -- Daemon threading
 TODO: 
   1. Create/Destroy/Join threads to properly terminate program
 
-
+USEFUL QUERIES
+get number of messages per minute
+'SELECT Time AS sec, COUNT(*) AS cnt FROM Messages GROUP BY FLOOR(UNIX_TIMESTAMP(Time)/60);'
