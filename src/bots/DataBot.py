@@ -1,6 +1,9 @@
+#!/usr/bin/python
 import MySQLdb as mdb
 from threading import Thread
 import sys, socket, string, datetime
+from visualization.db_connect import SQLConnection
+import json
 
 """
 Script to get latest chat messages from a twitch stream and add them to database 
@@ -17,22 +20,16 @@ class DataBot(Thread):
     SERVER = 'irc.twitch.tv'
     PORT = 6667
     NICKNAME = 'mroseman_bot'
-    PASSWORD = 'oauth:glz9hskrj3umqvzix5876fc6fdj0u9'
-    
+    PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
+
     BUFFER_SIZE = 1024
 
     
     # default constructor
-    def __init__(self, channel, channel_id):
+    def __init__(self, channel_id, channel):
         # initialize threading
         Thread.__init__(self)
         self.daemon = True
-        # connect to DB
-        # TODO handle this more securely
-        # self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
-        # self.con.autocommit(True)
-        # self.con.ping(True)
-        # self.cur = self.con.cursor(mdb.cursors.DictCursor)
 
         # create IRC socket object 
         self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -68,15 +65,34 @@ class DataBot(Thread):
         self.send_data("PASS %s" % password)
         self.send_data("NICK %s" % nickname)
     
-    
     # insert to database
     def insert_message(self, username, msg):
-        self.cur.execute("INSERT INTO messages(stream_id, user, message, time) VALUES(%s, %s, %s, NOW())", (self.channel_id, username, msg))
+        msg = msg.replace('\'', '\\\'')
+        msg = msg.replace ('\"', '\\\"')
+
+        query = """
+        INSERT IGNORE Users (UserName, Monitor) VALUES ('{0}', FALSE);
+        """.format(username)
+        self.con.query(query)
+        query = """
+        INSERT INTO Messages (StreamerID, UserID, Message, Time, GameID)
+        VALUES ('{0}', (SELECT ID FROM Users WHERE UserName='{1}'), %(msg)s, NOW(),
+        '{2}');
+        """.format(self.channel_id, username, '1')
+
+        try:
+            self.con.query(query, {'msg':msg})
+        except TypeError as e:
+            print (msg)
         # optionally print the messages
         # print timestamp, username, msg
 
     # override run function from interface
     def run(self):
+        print ('thread started')
+
+        self.con = SQLConnection()
+
         readbuffer = ""
 
         while 1:
@@ -88,7 +104,7 @@ class DataBot(Thread):
             for line in temp:
                 line = string.rstrip(line)
                 line = string.split(line)
-                
+
                 if (line[0] == 'PING'):
                     self.send_data('PONG %s' % line[1])
                 if (line[1] == 'PRIVMSG'):
@@ -97,11 +113,5 @@ class DataBot(Thread):
                     username = username[:index - 1]
     
                     msg = ' '.join(line[3:])[1:]
-                    self.con = mdb.connect('localhost', 'root', 'lolipop123', 'twitch_mining');
-                    self.con.autocommit(True)
-                    self.con.ping(True)
-                    self.cur = self.con.cursor(mdb.cursors.DictCursor)
 
                     self.insert_message(username, msg)
-
-                    self.con.close()

@@ -34,10 +34,15 @@ class SQLConnection:
                                                           _db_name)
         self.engine = sqlalchemy.create_engine(sql_con_string)
 
-    def query(self, sql_query):
+    def query(self, sql_query, values=None):
         """
         take in a query string and simply pass it on to the database
         @param sql_query: an already properly formated SQL query string
         @return: a pandas dataframe object of the query results
         """
-        return pandas.read_sql_query(sql_query, self.engine)
+        try:
+            return pandas.read_sql_query(sql_query, self.engine, params=values)
+        except sqlalchemy.exc.ResourceClosedError as e:
+            pass
+            #  this is expected behavior
+            #print ('query has no return value')

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, re, time, pandas
+import sys, re, time, pandas, ConfigParser
 from datetime import datetime
 from db_connect import SQLConnection
 import numpy as np
@@ -29,11 +29,24 @@ def get_time(utc_date):
 
 
 def main():
-    #  query the database for just message times and nothing else
-    con.query('messages', 'timestamp', 'query.csv')
-    print ('database query completed')
+    config = ConfigParser.RawConfigParser()
+    config.read(SQLConnection.config_file)
 
-    print (times.info())
+    section_name = 'Table Details'
+
+    _table_name = config.get(section_name, 'msg_tablename')
+    _timestamp_col_name = config.get(section_name, 'timestamp_col_name')
+
+    format_args = (_timestamp_col_name, _table_name)
+    query_string = """
+    SELECT FLOOR(UNIX_TIMESTAMP({0})/60) AS min, COUNT(*)
+    FROM {1}
+    GROUP BY min;
+    """.format(*format_args)
+    print (query_string)
+    df = con.query(query_string)
+    print ('database query completed')
+    print (df)
 
     print (times[timestamp_col].iloc[0])
     print (times[timestamp_col].iloc[-1])
