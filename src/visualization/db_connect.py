@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import sys, ConfigParser, sqlalchemy, pandas, numpy
+import sys, ConfigParser, numpy
+import MySQLdb as mdb
 
 
 class SQLConnection:
@@ -28,16 +29,21 @@ class SQLConnection:
                 '{1}').format(e.errno, e.strerror)
             sys.exit()
 
-        sql_con_string = 'mysql://{0}:{1}@{2}/{3}'.format(_user,
-                                                          _password,
-                                                          _hostname,
-                                                          _db_name)
-        self.engine = sqlalchemy.create_engine(sql_con_string)
+        con = mdb.connect(_hostname, _user, _password, _db_name)
+        con.autocommit(True)
+        con.ping(True)
 
-    def query(self, sql_query):
+        self.cur = con.cursor(mdb.cursors.DictCursor)
+
+
+    def query(self, sql_query, values=None):
         """
         take in a query string and simply pass it on to the database
         @param sql_query: an already properly formated SQL query string
         @return: a pandas dataframe object of the query results
         """
-        return pandas.read_sql_query(sql_query, self.engine)
+        self.cur.execute(sql_query, values)
+        return self.cur.fetchall()
+
+    def close(self):
+        self.cur.close()
