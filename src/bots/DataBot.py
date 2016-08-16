@@ -70,22 +70,36 @@ class DataBot(Thread):
         msg = msg.replace('\'', '\\\'')
         msg = msg.replace ('\"', '\\\"')
 
+        #  insert the username if it doesnt already exist
         query = """
         INSERT IGNORE Users (UserName, Monitor) VALUES ('{0}', FALSE);
         """.format(username)
         self.con.query(query)
+
+        #  insert this specific message to the Messages table
         query = """
         INSERT INTO Messages (StreamerID, UserID, Message, Time, GameID)
         VALUES ('{0}', (SELECT ID FROM Users WHERE UserName='{1}'), %(msg)s, NOW(),
         '{2}');
         """.format(self.channel_id, username, '1')
+        self.con.query(query, {'msg':msg})
 
-        try:
-            self.con.query(query, {'msg':msg})
-        except TypeError as e:
-            print (msg)
         # optionally print the messages
         # print timestamp, username, msg
+
+    def keep_monitoring(self, username):
+        """
+        queries the database to see if this channel should still be monitored
+        returns true if the thread should remain and false if the thread should
+        stop
+        """
+        query = """
+        SELECT Monitor FROM Users
+        WHERE UserName=%(user)s;
+        """
+        if self.con.query(query, {'user':username})[0] == 1:
+            return True
+        return False
 
     # override run function from interface
     def run(self):
@@ -96,6 +110,12 @@ class DataBot(Thread):
         readbuffer = ""
 
         while 1:
+            #  Check to see if this channel should still be monitored
+            if not keep_monitoring(username):
+                self.con.close()
+                #kill self
+                sys.exit(0)
+
             # self.con.close()
             readbuffer=readbuffer + self.get_data()
             temp = string.split(readbuffer, '\n')

@@ -44,3 +44,6 @@ class SQLConnection:
         """
         self.cur.execute(sql_query, values)
         return self.cur.fetchall()
+
+    def close(self):
+        self.cur.close()
