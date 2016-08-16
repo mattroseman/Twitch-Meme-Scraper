@@ -1,6 +1,6 @@
 -- MySQL dump 10.16  Distrib 10.1.14-MariaDB, for Linux (x86_64)
 --
--- Host: localhost    Database: twitch_new
+-- Host: localhost    Database: twitch_08152016_01
 -- ------------------------------------------------------
 -- Server version	10.1.14-MariaDB
 
@@ -49,10 +49,11 @@ CREATE TABLE `Messages` (
   KEY `StreamerID` (`StreamerID`),
   KEY `GameID` (`GameID`),
   KEY `Time` (`Time`),
+  KEY `Message` (`Message`(100)),
   CONSTRAINT `Messages_ibfk_4` FOREIGN KEY (`UserID`) REFERENCES `Users` (`ID`),
   CONSTRAINT `Messages_ibfk_5` FOREIGN KEY (`StreamerID`) REFERENCES `Users` (`ID`),
   CONSTRAINT `Messages_ibfk_6` FOREIGN KEY (`GameID`) REFERENCES `Games` (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=1489362 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1528502 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,7 +71,7 @@ CREATE TABLE `Users` (
   UNIQUE KEY `UserName_2` (`UserName`),
   KEY `UserName` (`UserName`),
   KEY `Monitor` (`Monitor`)
-) ENGINE=InnoDB AUTO_INCREMENT=1489693 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1528944 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -83,10 +84,9 @@ CREATE TABLE `Users` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 --
--- Create place holder game (custom addition by Matt)
+-- Matt temporary game entry
 --
-
 INSERT IGNORE INTO Games (ID, GameName)
     VALUES (1, 'TestGame');
 
--- Dump completed on 2016-08-15 22:19:47
+-- Dump completed on 2016-08-16 18:37:43
