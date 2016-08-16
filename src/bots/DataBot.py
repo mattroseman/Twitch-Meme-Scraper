@@ -36,6 +36,7 @@ class DataBot(Thread):
 
         # join the channel and authenticate
         self.channel_id = channel_id
+        self.channel = channel
         self.irc_conn()
         self.login(self.NICKNAME, self.PASSWORD)
         self.join(channel)
@@ -58,7 +59,7 @@ class DataBot(Thread):
     
     #  join a channel
     def join(self, channel):
-        self.send_data("JOIN %s" % channel)
+        self.send_data("JOIN #%s" % channel)
     
     #  send login data
     def login(self, nickname, password=None):
@@ -87,7 +88,7 @@ class DataBot(Thread):
         # optionally print the messages
         # print timestamp, username, msg
 
-    def keep_monitoring(self, username):
+    def keep_monitoring(self):
         """
         queries the database to see if this channel should still be monitored
         returns true if the thread should remain and false if the thread should
@@ -95,9 +96,9 @@ class DataBot(Thread):
         """
         query = """
         SELECT Monitor FROM Users
-        WHERE UserName=%(user)s;
+        WHERE UserName=%(channel)s;
         """
-        if self.con.query(query, {'user':username})[0] == 1:
+        if self.con.query(query, {'channel':self.channel})[0].get('Monitor'):
             return True
         return False
 
@@ -111,7 +112,8 @@ class DataBot(Thread):
 
         while 1:
             #  Check to see if this channel should still be monitored
-            if not keep_monitoring(username):
+            if not self.keep_monitoring():
+                print ('killing self')
                 self.con.close()
                 #kill self
                 sys.exit(0)
