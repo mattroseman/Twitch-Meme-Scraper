@@ -13,7 +13,7 @@ try:
 
     for row in rows:
         # for each channel, create a bot instance
-        bot = DataBot.DataBot(row['ID'], '#' + row['UserName'])
+        bot = DataBot.DataBot(row['ID'], row['UserName'])
     # keep the main thread alive in order to keep child threads alive as well
     while True:
         pass
