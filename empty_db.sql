@@ -82,4 +82,11 @@ CREATE TABLE `Users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+--
+-- Create place holder game (custom addition by Matt)
+--
+
+INSERT IGNORE INTO Games (ID, GameName)
+    VALUES (1, 'TestGame');
+
 -- Dump completed on 2016-08-15 22:19:47
