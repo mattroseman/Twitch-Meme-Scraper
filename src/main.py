@@ -3,20 +3,28 @@ from bots import DataBot
 import MySQLdb as mdb
 import sys
 from visualization.db_connect import SQLConnection
+import time
+
+update_interval = 300
 
 # tryexcept block for initial mysql connection
 try:
-    con = SQLConnection()
 
-    # get the list of channels to listen on
-    rows = con.query("SELECT * FROM Users WHERE Monitor=TRUE")
-
-    for row in rows:
-        # for each channel, create a bot instance
-        bot = DataBot.DataBot(row['ID'], row['UserName'])
-    # keep the main thread alive in order to keep child threads alive as well
     while True:
-        pass
+        print ('checking for new streams')
+        con = SQLConnection()
+
+        # get the list of channels to listen on
+        rows = con.query("SELECT * FROM Users WHERE Monitor=TRUE")
+
+        for row in rows:
+            # for each channel, create a bot instance
+            bot = DataBot.DataBot(row['ID'], row['UserName'])
+        # keep the main thread alive in order to keep child threads alive as well
+
+        con.close()
+        time.sleep(update_interval)
+
 
 # print mysql error messages
 except mdb.Error as e:

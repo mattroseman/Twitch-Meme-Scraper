@@ -5,6 +5,7 @@ import requests
 import sys, socket, string, datetime
 from visualization.db_connect import SQLConnection
 import json
+import time
 
 """
 Script to get latest chat messages from a twitch stream and add them to database 
@@ -99,20 +100,21 @@ class DataBot(Thread):
         stop
         """
         query = """
-        SELECT Monitor FROM Users
+        UPDATE Users
+        SET Monitor=False
         WHERE UserName=%(channel)s;
         """
-        #  if the channel is no longer set to monitor in the database
-        if not self.con.query(query, {'channel':self.channel})[0].get('Monitor'):
-            return False
+
+        r = requests.get(('https://api.twitch.tv/kraken/streams/{0}').format(self.channel))
+
+        #  if the channel is offline
+        if r.json()['stream'] is None:
+            self.con.query(query, {'channel':self.channel})
 
         #  if the channel has fewer than 250 users
-        num_users = int(requests.get('https://api.twitch.tv/kraken/' +\
-                                 'search/streams/{0}'.format(self.channel)).json()['viewers'])
-        if num_users < user_limit:
-            return False
-        
-        return True
+        num_users = r.json()['stream']['viewers']
+        if num_users < self.user_limit:
+            self.con.query(query, {'channel':self.channel})
 
     # override run function from interface
     def run(self):
@@ -122,10 +124,20 @@ class DataBot(Thread):
 
         readbuffer = ""
 
+        oldtime = time.time()
+
         while 1:
             #  Check to see if this channel should still be monitored
-            if not self.keep_monitoring():
-                print ('killing self')
+
+            if time.time() - oldtime > 600:
+                keep_monitoring()
+            
+            query = """
+            SELECT Monitor FROM Users
+            WHERE UserName=%(channel)s;
+            """
+            if self.con.query(query,
+                              {'channel':self.channel})[0].get('Monitor') == False:
                 self.con.close()
                 #kill self
                 sys.exit(0)
