@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import MySQLdb as mdb
 from threading import Thread
+import requests
 import sys, socket, string, datetime
 from visualization.db_connect import SQLConnection
 import json
@@ -23,6 +24,9 @@ class DataBot(Thread):
     PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
 
     BUFFER_SIZE = 1024
+
+    #  if the user count drops below this stop monitoring
+    user_limit = 250
 
     
     # default constructor
@@ -98,9 +102,17 @@ class DataBot(Thread):
         SELECT Monitor FROM Users
         WHERE UserName=%(channel)s;
         """
-        if self.con.query(query, {'channel':self.channel})[0].get('Monitor'):
-            return True
-        return False
+        #  if the channel is no longer set to monitor in the database
+        if not self.con.query(query, {'channel':self.channel})[0].get('Monitor'):
+            return False
+
+        #  if the channel has fewer than 250 users
+        num_users = int(requests.get('https://api.twitch.tv/kraken/' +\
+                                 'search/streams/{0}'.format(self.channel)).json()['viewers'])
+        if num_users < user_limit:
+            return False
+        
+        return True
 
     # override run function from interface
     def run(self):
