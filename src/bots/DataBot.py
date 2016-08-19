@@ -99,17 +99,6 @@ class DataBot(Thread):
         returns true if the thread should remain and false if the thread should
         stop
         """
-        query = """
-        UPDATE Users
-        SET Monitor=False
-        WHERE UserName=%(channel)s;
-        """
-
-        r = requests.get(('https://api.twitch.tv/kraken/streams/{0}').format(self.channel))
-
-        #  if the channel is offline
-        if r.json()['stream'] is None:
-            self.con.query(query, {'channel':self.channel})
 
         #  if the channel has fewer than 250 users
         num_users = r.json()['stream']['viewers']
@@ -130,7 +119,7 @@ class DataBot(Thread):
             #  Check to see if this channel should still be monitored
 
             if time.time() - oldtime > 600:
-                keep_monitoring()
+                self.keep_monitoring()
             
             query = """
             SELECT Monitor FROM Users
