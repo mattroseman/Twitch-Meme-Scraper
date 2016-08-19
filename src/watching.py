@@ -21,20 +21,38 @@ def send_data(command):
 send_data('PASS %s' % PASSWORD)
 send_data('NICK %s' % NICKNAME)
 send_data('CAP REQ :twitch.tv/membership')
-send_data('JOIN #dizzykitten')
-while True:
-    readbuffer = ''
-    readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
-    temp = string.split(readbuffer, '\n')
-    readbuffer = temp.pop()
-    for line in temp:
-        print (line)
+
+def get_users(channel):
+    send_data('JOIN #{0}'.format(channel))
+
+    users = []
+
+    listing_names = False
+    while True:
+        readbuffer = ''
+        readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
+        temp = string.split(readbuffer, '\n')
+        readbuffer = temp.pop()
+
+        for line in temp:
+            line = string.rstrip(line)
+            if 'JOIN' in line:
+                listing_names = True
+                continue
+            if 'End of /NAMES list' in line:
+                listing_names = False
+                return users
+            if listing_names:
+                line = line.replace(':', '')
+                line = line.split(' ')
+                line = line[5:]
+                users = users + line
 
 #  run forevor
 while True:
     #  get list of channels that are being monitored
     query = """
-    SELECT Id FROM Users
+    SELECT UserName FROM Users
     WHERE Monitored=True;
     """
     streams = con.query(query)
