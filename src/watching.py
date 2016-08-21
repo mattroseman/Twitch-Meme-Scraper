@@ -28,31 +28,49 @@ def get_users(channel):
     twitch and watching that channel
     @return: returns an array of strings that are users watching this channel
     """
-    send_data('JOIN #{0}'.format(channel))
-
+    r = requests.get('https://tmi.twitch.tv/' +
+                     'group/user/{0}/chatters'.format(channel)).json()
     users = []
+    if (r['chatter_count'] >= 1000):
+        print ('usercount over 1000')
+        r = r['chatters']
+        #  get user count from api instead
+        if r['moderators']:
+            users = r['moderators']
+        if r['staff']:
+            users = users + r['staff']
+        if r['admins']:
+            users = users + r['admins']
+        if r['global_mods']:
+            users = users + r['global_mods']
+        if r['viewers']:
+            users = users + r['viewers']
+        return users
 
-    listing_names = False
-    while True:
-        readbuffer = ''
-        readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
-        temp = string.split(readbuffer, '\n')
-        readbuffer = temp.pop()
+    else:
+        send_data('JOIN #{0}'.format(channel))
 
-        for line in temp:
-            line = string.rstrip(line)
-            print (line)
-            if 'JOIN' in line:
-                listing_names = True
-                continue
-            if 'End of /NAMES list' in line:
-                listing_names = False
-                return users
-            if listing_names:
-                line = line.replace(':', '')
-                line = line.split(' ')
-                line = line[5:]
-                users = users + line
+        listing_names = False
+        while True:
+            readbuffer = ''
+            readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
+            temp = string.split(readbuffer, '\n')
+            readbuffer = temp.pop()
+
+            for line in temp:
+                line = string.rstrip(line)
+                print (line)
+                if 'JOIN' in line:
+                    listing_names = True
+                    continue
+                if 'End of /NAMES list' in line:
+                    listing_names = False
+                    return users
+                if listing_names:
+                    line = line.replace(':', '')
+                    line = line.split(' ')
+                    line = line[5:]
+                    users = users + line
 
 def get_userid(username):
     """
@@ -74,28 +92,27 @@ while True:
     streams = map(lambda x: x.get('UserName'), con.query(query))
 
     for stream in streams:
-        #  get id of this stream
+        query = """
+        SELECT Id FROM Users
+        WHERE UserName='%(user)s';
+        """
         stream_id = get_userid(stream)
-
-        print ('getting users for stream: {0}/{1}'.format(stream, stream_id))
 
         #  for each stream get the list of users
         users = get_users(stream)
         print (users)
 
-        #  for each user get id and add it to the list of new rows
+        #  update Users to make sure it has all users
+        user_values = '(' + '), ('.join(users) + ')'
+        query = """
+        INSERT IGNORE INTO Users (UserName)
+        VALUES %(users)s;
+        """
+
+        #  for each user add it to the list of new rows
         new_rows = ''
         for user in users:
-            #  add this user to Users if it doesn't already exist
-            query = """
-            INSERT IGNORE INTO Users (UserName)
-            VALUE (%(username)s);
-            """
-            con.query(query, {'username':user})
-
-            user_id = get_userid(user)
-            print ('adding user: {0}/{1}'.format(user, user_id))
-
+            user_id = "(SELECT Id FROM Users WHERE UserName='{0}')".format(user)
             new_rows = new_rows + '({0}, {1}), '.format(user_id, stream_id)
 
         #  take off the last ', ' of new_rows
@@ -109,9 +126,9 @@ while True:
                             WHERE UserName=%(stream)s);
 
             INSERT IGNORE INTO Watching (UserId, StreamId)
-            VALUES %(rows)s;
+            VALUES %(users)s;
         COMMIT;
         """
 
         print ('updating watching table for stream: {0}'.format(stream))
-        con.query(query, {'stream':stream, 'rows':new_rows})
+        con.query(query, {'stream':stream_id, 'users':})
