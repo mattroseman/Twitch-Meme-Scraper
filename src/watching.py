@@ -113,6 +113,8 @@ while True:
         #  for each user add it to the list of new rows
         new_rows = ''
         for user in users:
+            #  TODO maybe try havving a %(quote)s and have that map in a single
+            #  quote
             user_id = "(SELECT Id FROM Users WHERE UserName={0})".format(user)
             new_rows = new_rows + '({0}, {1}), '.format(user_id, stream_id)
 
