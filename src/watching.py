@@ -97,6 +97,7 @@ while True:
         WHERE UserName='%(user)s';
         """
         stream_id = get_userid(stream)
+        print ('streamid is ' + str(stream_id))
 
         #  for each stream get the list of users
         users = get_users(stream)
@@ -112,7 +113,7 @@ while True:
         #  for each user add it to the list of new rows
         new_rows = ''
         for user in users:
-            user_id = "(SELECT Id FROM Users WHERE UserName='{0}')".format(user)
+            user_id = "(SELECT Id FROM Users WHERE UserName={0})".format(user)
             new_rows = new_rows + '({0}, {1}), '.format(user_id, stream_id)
 
         #  take off the last ', ' of new_rows
@@ -122,13 +123,14 @@ while True:
         query = """
         START TRANSACTION;
             DELETE FROM Watching
-            WHERE StreamId=(SELECT Id FROM Users
-                            WHERE UserName=%(stream)s);
+            WHERE StreamId = %(stream)s;
 
             INSERT IGNORE INTO Watching (UserId, StreamId)
             VALUES %(users)s;
         COMMIT;
         """
 
+        print (new_rows)
+
         print ('updating watching table for stream: {0}'.format(stream))
-        con.query(query, {'stream':stream_id, 'users':})
+        con.query(query, {'stream':stream_id, 'users':new_rows})
