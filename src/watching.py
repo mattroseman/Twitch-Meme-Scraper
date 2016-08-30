@@ -1,5 +1,5 @@
 from visualization.db_connect import SQLConnection
-import requests, socket, sys, string
+import requests, socket, sys, string, json
 
 print ('Connecting to DataBase')
 con = SQLConnection()
@@ -112,27 +112,35 @@ while True:
 
         #  for each user add it to the list of new rows
         new_rows = ''
+        json_users = {}
         for user in users:
             #  TODO maybe try havving a %(quote)s and have that map in a single
             #  quote
-            user_id = "(SELECT Id FROM Users WHERE UserName={0})".format(user)
+            user_id = ("(SELECT Id FROM Users WHERE " +\
+                       "UserName=%({0})s)").format(user)
+            json_users[user] = "'{0}'".format(user)
             new_rows = new_rows + '({0}, {1}), '.format(user_id, stream_id)
 
         #  take off the last ', ' of new_rows
         new_rows = new_rows[:-2]
 
         #  TODO I bet there is a better way of doing this -Matt
-        query = """
-        START TRANSACTION;
-            DELETE FROM Watching
-            WHERE StreamId = %(stream)s;
+        #query = """
+        #START TRANSACTION;
+        #    DELETE FROM Watching
+        #    WHERE StreamId = {0};
 
-            INSERT IGNORE INTO Watching (UserId, StreamId)
-            VALUES %(users)s;
-        COMMIT;
-        """
+        #    INSERT IGNORE INTO Watching (UserId, StreamId)
+        #    VALUES {1};
+        #COMMIT;
+        #""".format(stream_id, new_rows)
+        query = """
+        INSERT IGNORE INTO Watching (UserId, StreamId)
+        VALUES {0};
+        """.format(new_rows)
 
         print (new_rows)
+        print (json_users)
 
         print ('updating watching table for stream: {0}'.format(stream))
-        con.query(query, {'stream':stream_id, 'users':new_rows})
+        con.query(query, json_users)
