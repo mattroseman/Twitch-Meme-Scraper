@@ -1,9 +1,11 @@
 #!/usr/bin/python
 import MySQLdb as mdb
 from threading import Thread
+import requests
 import sys, socket, string, datetime
 from visualization.db_connect import SQLConnection
 import json
+import time
 
 """
 Script to get latest chat messages from a twitch stream and add them to database 
@@ -23,6 +25,9 @@ class DataBot(Thread):
     PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
 
     BUFFER_SIZE = 1024
+
+    #  if the user count drops below this stop monitoring
+    user_limit = 250
 
     
     # default constructor
@@ -94,13 +99,11 @@ class DataBot(Thread):
         returns true if the thread should remain and false if the thread should
         stop
         """
-        query = """
-        SELECT Monitor FROM Users
-        WHERE UserName=%(channel)s;
-        """
-        if self.con.query(query, {'channel':self.channel})[0].get('Monitor'):
-            return True
-        return False
+
+        #  if the channel has fewer than 250 users
+        num_users = r.json()['stream']['viewers']
+        if num_users < self.user_limit:
+            self.con.query(query, {'channel':self.channel})
 
     # override run function from interface
     def run(self):
@@ -110,10 +113,20 @@ class DataBot(Thread):
 
         readbuffer = ""
 
+        oldtime = time.time()
+
         while 1:
             #  Check to see if this channel should still be monitored
-            if not self.keep_monitoring():
-                print ('killing self')
+
+            if time.time() - oldtime > 600:
+                self.keep_monitoring()
+            
+            query = """
+            SELECT Monitor FROM Users
+            WHERE UserName=%(channel)s;
+            """
+            if self.con.query(query,
+                              {'channel':self.channel})[0].get('Monitor') == False:
                 self.con.close()
                 #kill self
                 sys.exit(0)

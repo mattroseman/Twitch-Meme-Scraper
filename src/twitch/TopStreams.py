@@ -83,3 +83,6 @@ class TopStreams(Thread):
                 self.con.query(query)
             except mdb.Error as e:
                 print ("Error %d: %s" % (e.args[0],e.args[1]))
+
+        self.con.close()
+        print ('TopStreams thread exiting')
