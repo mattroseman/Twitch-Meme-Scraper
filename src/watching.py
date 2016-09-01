@@ -48,8 +48,8 @@ def get_users(channel):
         return users
 
     else:
+        print ('usercount under 1000')
         send_data('JOIN #{0}'.format(channel))
-
         listing_names = False
         while True:
             readbuffer = ''
@@ -59,11 +59,11 @@ def get_users(channel):
 
             for line in temp:
                 line = string.rstrip(line)
-                print (line)
                 if 'JOIN' in line:
                     listing_names = True
                     continue
                 if 'End of /NAMES list' in line:
+                    print ('end of names reached')
                     listing_names = False
                     return users
                 if listing_names:
@@ -101,28 +101,26 @@ while True:
 
         #  for each stream get the list of users
         users = get_users(stream)
-        print (users)
-
-        #  update Users to make sure it has all users
-        user_values = '(' + '), ('.join(users) + ')'
-        query = """
-        INSERT IGNORE INTO Users (UserName)
-        VALUES %(users)s;
-        """
 
         #  for each user add it to the list of new rows
         new_rows = ''
         json_users = {}
         for user in users:
-            #  TODO maybe try havving a %(quote)s and have that map in a single
-            #  quote
             user_id = ("(SELECT Id FROM Users WHERE " +\
                        "UserName=%({0})s)").format(user)
-            json_users[user] = "'{0}'".format(user)
+            json_users[user] = '{0}'.format(user)
             new_rows = new_rows + '({0}, {1}), '.format(user_id, stream_id)
 
         #  take off the last ', ' of new_rows
         new_rows = new_rows[:-2]
+
+        #  update Users to make sure it has all users
+        user_values = '(%(' + ')s), (%('.join(users) + ')s)'
+        query = """
+        INSERT IGNORE INTO Users (UserName)
+        VALUES {0};
+        """.format(user_values)
+        con.query(query, json_users)
 
         #  TODO I bet there is a better way of doing this -Matt
         #query = """
@@ -139,7 +137,7 @@ while True:
         VALUES {0};
         """.format(new_rows)
 
-        print (new_rows)
+        print (query)
         print (json_users)
 
         print ('updating watching table for stream: {0}'.format(stream))
