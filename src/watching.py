@@ -132,7 +132,11 @@ while True:
         #    VALUES {1};
         #COMMIT;
         #""".format(stream_id, new_rows)
-        query = """
+        delete_query = """
+        DELETE FROM Watching
+        WHERE StreamId = {0};
+        """.format(stream_id)
+        insert_query = """
         INSERT IGNORE INTO Watching (UserId, StreamId)
         VALUES {0};
         """.format(new_rows)
@@ -141,4 +145,4 @@ while True:
         print (json_users)
 
         print ('updating watching table for stream: {0}'.format(stream))
-        con.query(query, json_users)
+        con.query([delete_query, insert_query], [None, json_users])
