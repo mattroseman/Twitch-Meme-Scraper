@@ -2,7 +2,7 @@ from bots import DataBot
 # from threading import Thread
 import MySQLdb as mdb
 import sys
-from visualization.db_connect import SQLConnection
+from db_connect import SQLConnection
 import time
 
 update_interval = 300

@@ -2,7 +2,7 @@ import MySQLdb as mdb
 import sys
 import requests
 from threading import Thread
-from visualization.db_connect import SQLConnection
+from db_connect import SQLConnection
 """
 Script to get the top 8 games from Twitch, and the top 8 streams for each game
 Implements Thread interface

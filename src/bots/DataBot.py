@@ -3,7 +3,7 @@ import MySQLdb as mdb
 from threading import Thread
 import requests
 import sys, socket, string, datetime
-from visualization.db_connect import SQLConnection
+from db_connect import SQLConnection
 import json
 import time
 

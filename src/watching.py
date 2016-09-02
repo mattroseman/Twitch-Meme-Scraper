@@ -1,4 +1,4 @@
-from visualization.db_connect import SQLConnection
+from db_connect import SQLConnection
 import requests, socket, sys, string, json
 
 print ('Connecting to DataBase')

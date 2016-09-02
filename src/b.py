@@ -1,4 +1,4 @@
-from visualization.db_connect import SQLConnection
+from db_connect import SQLConnection
 from twitch import TopStreams
 import requests
 import sys
