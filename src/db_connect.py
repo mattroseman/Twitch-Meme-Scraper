@@ -6,7 +6,7 @@ import MySQLdb as mdb
 class SQLConnection:
     """Used to connect to a SQL database and send queries to it"""
     config_file = 'db.cfg'
-    section_name = 'Database Details'
+    section_name = 'Relational Database Details'
 
     _db_name = ''
     _hostname = ''
