@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import sys, ConfigParser, numpy
 import MySQLdb as mdb
+from pymongo import MongoClient
 
 
 class SQLConnection:
@@ -8,28 +9,23 @@ class SQLConnection:
     config_file = 'db.cfg'
     section_name = 'Relational Database Details'
 
-    _db_name = ''
-    _hostname = ''
-    _ip_address = ''
-    _username = ''
-    _password = ''
-
     def __init__(self):
         config = ConfigParser.RawConfigParser()
         config.read(self.config_file)
 
         try:
-            _db_name = config.get(self.section_name, 'db_name')
-            _hostname = config.get(self.section_name, 'hostname')
-            _ip_address = config.get(self.section_name, 'ip_address')
-            _user = config.get(self.section_name, 'user')
-            _password = config.get(self.section_name, 'password')
+            self._db_name = config.get(self.section_name, 'db_name')
+            self._hostname = config.get(self.section_name, 'hostname')
+            self._ip_address = config.get(self.section_name, 'ip_address')
+            self._user = config.get(self.section_name, 'user')
+            self._password = config.get(self.section_name, 'password')
         except ConfigParser.NoOptionError as e:
             print ('one of the options in the config file has no value\n{0}: ' +
-                '{1}').format(e.errno, e.strerror)
+                   '{1}').format(e.errno, e.strerror)
             sys.exit()
 
-        self.con = mdb.connect(_hostname, _user, _password, _db_name)
+        self.con = mdb.connect(self._hostname, self._user, self._password,
+                               self._db_name)
         self.con.autocommit(False)
         self.con.ping(True)
 
@@ -62,3 +58,31 @@ class SQLConnection:
 
     def close(self):
         self.cur.close()
+
+class NoSQLConnection:
+    """Used to connect to a NoSQL database and send queries into it"""
+    config_file = 'db.cfg'
+    section_name = 'NonRelational Database Details'
+
+    def __init__(self):
+        config = ConfigParser.RawConfigParser()
+        config.read(self.config_file)
+
+        try:
+            self._db_name = config.get(self.section_name, 'db_name')
+            self._collection = config.get(self.section_name, 'collection_name')
+            self._hostname = config.get(self.section_name, 'hostname')
+            self._user = config.get(self.section_name, 'user')
+        except ConfigParser.NoOptionError as e:
+            print ('one of the options in the config file has no value\n{0}: ' +
+                   '{1}').format(e.errno, e.strerror)
+            sys.exit()
+
+        self.client = MongoClient()
+        self.db = self.client[self._db_name]
+
+    def update(self, criteria, new_values, upsert=True):
+        print (self._collection)
+        result = self.db[self._collection].update_one(criteria, new_values, upsert)
+        return result
+

@@ -1,12 +1,12 @@
 import requests, socket, sys, string, json
 from db_connect import SQLConnection
+from db_connect import NoSQLConnection
 from pymongo import MongoClient
 
 print ('Connecting to DataBase')
 con = SQLConnection()
 
-client = MongoClient()
-db = client.twitch_01
+nosql_con = NoSQLConnection()
 
 SERVER = 'irc.twitch.tv'
 PORT = 6667
@@ -90,16 +90,16 @@ while True:
 
         print ('updating watching users in the database')
         #  add these users to this streams document
-        result = db.usersWatching.update_one(
+        result = nosql_con.update(
             { "streamname": stream },
-            { 
-                "$set": { 
-                    "watching": users 
+            {
+                "$set": {
+                    "watching": users
                 },
                 "$setOnInsert": {
                     "streamname": stream
                 }
-            },
-            True
+            }
         )
+
         print (result)
