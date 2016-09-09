@@ -1,17 +1,23 @@
-window.onload = function () {
-    var canvas = $('#myCanvas');
-    paper.setup(canvas);
+$(document).ready(function() {
+    console.log("javascript started");
 
-    var path = new Path.Circle({
-        center: view.center,
-        radius: 30,
-        strokeColor: 'black'
-    });
+    var svg = d3.select("svg");
+    var circle = svg.selectAll("circle")
+        .data([32, 57, 112, 293]);
+    var circleEnter = circle.enter().append("circle");
 
-    paper.view.draw();
-};
+    circle.style("fill", "steelblue");
+    circle.attr("r", 30);
 
-function onResize(event) {
-    // whenever the window is resized, recenter the path
-    path.position = view.center;
-}
+    //circle.attr("cx", function() { return Math.random() * 720; });
+
+    circle.data([32, 57, 112]);
+    // d refers to the data bound to the circle
+    circle.attr("r", function(d) { return Math.sqrt(d); });
+    // i refers to the index of the circle in the set of circles
+    circle.attr("cx", function(d,i) { return i * 100 + 30; });
+
+    circleEnter.attr("cy", 60);
+    circleEnter.attr("cx", function(d,i) { return i * 100 + 30; });
+    circleEnter.attr("r", function(d) { return Math.sqrt(d); });
+});
