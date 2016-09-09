@@ -78,7 +78,7 @@ class NoSQLConnection:
                    '{1}').format(e.errno, e.strerror)
             sys.exit()
 
-        self.client = MongoClient()
+        self.client = MongoClient(self._hostname, 27017)
         self.db = self.client[self._db_name]
 
     def update(self, criteria, new_values, upsert=True):
