@@ -4,8 +4,12 @@ from pymongo import MongoClient
 import json
 from bson import json_util
 from bson.json_util import dumps
+#  NOTE comment out on release build
+import pdb
 
 app = Flask(__name__)
+#  NOTE comment out on release build
+app.debug = True
 
 MONGODB_HOST = 'localhost'
 MONGODB_PORT = 27017
@@ -16,11 +20,18 @@ COLLECTION_NAME = 'usersWatching'
 def index():
     return render_template("index.html")
 
-@app.route("/streams/migration")
-def streams_migration():
+
+@app.route("/streams/")
+@app.route("/streams/<name>")
+def streams_migration(name=None):
+    #  NOTE comment out on release build
+    pdb.set_trace()
     connection = MongoClient(MONGODB_HOST, MONGODB_PORT)
     collection = connection[DBS_NAME][COLLECTION_NAME]
-    streams = collection.find()
+    if name is not None:
+        streams = collection.find({ 'streamname': name })
+    else:
+        streams = collection.find()
     json_streams = []
     for stream in streams:
         json_streams.append(stream)

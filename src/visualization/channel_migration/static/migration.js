@@ -20,4 +20,19 @@ $(document).ready(function() {
     circleEnter.attr("cy", 60);
     circleEnter.attr("cx", function(d,i) { return i * 100 + 30; });
     circleEnter.attr("r", function(d) { return Math.sqrt(d); });
+
+    streamname = "summit1g";
+    $.ajax({
+        url: "streams/" + streamname,
+        method: "GET",
+        dataType: "json",
+        success: function(result) {
+            result.forEach(function(element, index, array) {
+                if (console && console.log) {
+                    console.log("summit1g viewers ...");
+                    console.log(element.watching);
+                }
+            });
+        }
+    });
 });
