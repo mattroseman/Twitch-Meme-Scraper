@@ -35,10 +35,12 @@ def get_users(channel):
     r = requests.get('https://tmi.twitch.tv/' +
                      'group/user/{0}/chatters'.format(channel)).json()
     users = []
-    if (r['chatter_count'] >= 1000):
-        print ('usercount over 1000')
+    #  for now I'm just going to use API and see what happens
+    #  TODO change this user count back to 1000
+    if (r['chatter_count'] >= 0):
+        print ('usercount over 0')
         r = r['chatters']
-        #  get user count from api instead
+
         if r['moderators']:
             users = r['moderators']
         if r['staff']:
@@ -49,6 +51,7 @@ def get_users(channel):
             users = users + r['global_mods']
         if r['viewers']:
             users = users + r['viewers']
+        print (users[0])
         return users
 
     else:
@@ -63,12 +66,13 @@ def get_users(channel):
 
             for line in temp:
                 line = string.rstrip(line)
-                print (line)
                 if 'JOIN' in line:
+                    print (line)
                     listing_names = True
                     continue
                 if 'End of /NAMES list' in line:
                     print ('end of names reached')
+                    print (line)
                     listing_names = False
                     return users
                 if listing_names:
@@ -84,6 +88,17 @@ while True:
     WHERE Monitor=True;
     """
     streams = map(lambda x: x.get('UserName'), con.query(query))
+
+    nosql_con.delete(
+            { 
+                "streamname": 
+                {
+                    #  delete any documents where the streamname is not present
+                    #  in streams
+                    "$nin": streams
+                }
+            }
+    )
 
     for stream in streams:
         users = get_users(stream)
@@ -101,5 +116,3 @@ while True:
                 }
             }
         )
-
-        print (result)

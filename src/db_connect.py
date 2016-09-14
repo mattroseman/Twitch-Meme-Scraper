@@ -82,7 +82,9 @@ class NoSQLConnection:
         self.db = self.client[self._db_name]
 
     def update(self, criteria, new_values, upsert=True):
-        print (self._collection)
         result = self.db[self._collection].update_one(criteria, new_values, upsert)
         return result
 
+    def delete(self, criteria):
+        result = self.db[self._collection].delete_many(criteria)
+        return result
