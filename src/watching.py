@@ -60,8 +60,8 @@ def get_users(channel):
         pass
     last_api_call = time.time()
     """
+    print ('getting users for: ' + channel)
     join_message = get_join_message(channel)
-    print (join_message)
     names_substring = ':{0}.tmi.twitch.tv 353 {0} = #{1} :'.format(NICKNAME,
                                                                     channel)
     users = ''
@@ -71,35 +71,41 @@ def get_users(channel):
             users += match.group(1) + ' '
     users = users[:-1].split(' ')
 
+    print ('length of users gotten from IRC is {0}'.format(len(users)))
+
+    #  NOTE for now I'm going to assume if the user count is less than 200 It
+    #  may just be OPs and not actual users, so I'll call API
+
     #  print random string to make reading terminal easier
-    print (''.join(random.choice(string.ascii_uppercase + string.digits) for _
-           in range(5)))
+    #print (''.join(random.choice(string.ascii_uppercase + string.digits) for _
+    #       in range(5)))
 
-    print ('getting users for: ' + channel)
-    r = requests.get('https://tmi.twitch.tv/' +
-                     'group/user/{0}/chatters'.format(channel)).json()
-    users = []
+    if len(users) < 200:
+        print ('IRC user count is less than 200, now double checking with ' +
+               'API call')
+        r = requests.get('https://tmi.twitch.tv/' +
+                        'group/user/{0}/chatters'.format(channel)).json()
+        users = []
 
-    if r is None:
-        print ('null response gotten')
-        return users
+        if r is None:
+            print ('null response gotten')
+        else:
+            usercount = r['chatter_count']
+            print ('usercount = {0}'.format(usercount))
+            if (usercount > 0):
+                r = r['chatters']
 
-    usercount = r['chatter_count']
-    print ('usercount = {0}'.format(usercount))
-    if (usercount > 0):
-        r = r['chatters']
-
-        if r['moderators']:
-            users = r['moderators']
-        if r['staff']:
-            users = users + r['staff']
-        if r['admins']:
-            users = users + r['admins']
-        if r['global_mods']:
-            users = users + r['global_mods']
-        if r['viewers']:
-            users = users + r['viewers']
-        return users
+                if r['moderators']:
+                    users = r['moderators']
+                if r['staff']:
+                    users = users + r['staff']
+                if r['admins']:
+                    users = users + r['admins']
+                if r['global_mods']:
+                    users = users + r['global_mods']
+                if r['viewers']:
+                    users = users + r['viewers']
+    return users
 
 while True:
     #  get list of channels that are being monitored
