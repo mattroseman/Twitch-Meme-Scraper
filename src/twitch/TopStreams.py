@@ -19,6 +19,7 @@ class TopStreams(Thread):
         payload = {'q' : self.game_name, 'limit' : '100'}
         stream_list = list()
         r = requests.get('https://api.twitch.tv/kraken/search/streams', params = payload)
+        print (r)
         streams_limit = int(r.json()["_total"])
         offset = 0
         print ("Stream limit: ", streams_limit)

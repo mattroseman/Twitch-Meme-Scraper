@@ -1,4 +1,4 @@
-import requests, socket, sys, string, json
+import requests, socket, sys, string, json, time, random
 from db_connect import SQLConnection
 from db_connect import NoSQLConnection
 from pymongo import MongoClient
@@ -19,6 +19,8 @@ BUFFER_SIZE = 1024
 IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 IRC.connect((SERVER, PORT))
 
+last_api_call = time.time() #  time used to limit twitch API calls to one per second
+
 def send_data(command):
     IRC.send(command + '\r\n')
 
@@ -32,13 +34,28 @@ def get_users(channel):
     twitch and watching that channel
     @return: returns an array of strings that are users watching this channel
     """
+    """
+    #  if less then a second has passed since the last call wait
+    global last_api_call
+    while ((time.time() - last_api_call) < 1):
+        pass
+    last_api_call = time.time()
+    """
+    #  print random string to make reading terminal easier
+    print (''.join(random.choice(string.ascii_uppercase + string.digits) for _
+           in range(5)))
+    print ('getting users for: ' + channel)
     r = requests.get('https://tmi.twitch.tv/' +
                      'group/user/{0}/chatters'.format(channel)).json()
     users = []
-    #  for now I'm just going to use API and see what happens
-    #  TODO change this user count back to 1000
-    if (r['chatter_count'] >= 0):
-        print ('usercount over 0')
+
+    if r is None:
+        print ('null response gotten')
+        return users
+
+    usercount = r['chatter_count']
+    print ('usercount = {0}'.format(usercount))
+    if (usercount > 0):
         r = r['chatters']
 
         if r['moderators']:
@@ -54,32 +71,35 @@ def get_users(channel):
         print (users[0])
         return users
 
-    else:
-        print ('usercount under 1000')
-        send_data('JOIN #{0}'.format(channel))
-        listing_names = False
-        while True:
-            readbuffer = ''
-            readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
-            temp = string.split(readbuffer, '\n')
-            readbuffer = temp.pop()
+"""
+    users = []
+    send_data('JOIN #{0}'.format(channel))
+    send_data('WHO #{0}'.format(channel))
+    #send_data('NAMES #{0}'.format(channel))
+    listing_names = False
+    while True:
+        readbuffer = ''
+        readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
+        temp = string.split(readbuffer, '\n')
+        readbuffer = temp.pop()
 
-            for line in temp:
-                line = string.rstrip(line)
-                if 'JOIN' in line:
-                    print (line)
-                    listing_names = True
-                    continue
-                if 'End of /NAMES list' in line:
-                    print ('end of names reached')
-                    print (line)
-                    listing_names = False
-                    return users
-                if listing_names:
-                    line = line.replace(':', '')
-                    line = line.split(' ')
-                    line = line[5:]
-                    users = users + line
+        for line in temp:
+            line = string.rstrip(line)
+            print (line)
+            if 'JOIN' in line:
+                listing_names = True
+                continue
+            if 'End of /NAMES list' in line:
+                print ('end of names reached')
+                listing_names = False
+                send_data('PART #{0}'.format(channel))
+                return users
+            if listing_names:
+                line = line.replace(':', '')
+                line = line.split(' ')
+                line = line[5:]
+                users = users + line
+"""
 
 while True:
     #  get list of channels that are being monitored

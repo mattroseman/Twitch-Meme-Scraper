@@ -41,7 +41,6 @@ class SQLConnection:
             representing quoted values to insert into the relative query
             (values and sql_query indexes must line up)
         """
-        #  TODO check sql_query and values to see if they are lists
         #  if sql_query is a string
         if isinstance(sql_query, basestring):
             self.cur.execute(sql_query, values)

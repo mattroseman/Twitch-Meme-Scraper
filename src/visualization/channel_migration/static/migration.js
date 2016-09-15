@@ -1,8 +1,4 @@
-$(document).ready(function() {
-    console.log("javascript started");
-
-    var svg = d3.select("svg");
-
+function update_nodes(svg) {
     //  Get the current list of watching users and draw it
     $.ajax({
         url: "streams",
@@ -27,9 +23,17 @@ $(document).ready(function() {
                             .enter()
                             .append("text")
                             .attr("class", "stream-label");
-            labels.text(function(d) { return d.streamname; })
+            labels.text(function(d) { return d.streamname + "\n" + d.watching.length; })
                   .attr("x", function(d, i) {return i*200 + 30; })
                   .attr("y", 200);
         }
     });
+}
+
+$(document).ready(function() {
+    console.log("javascript started");
+
+    var svg = d3.select("svg");
+
+    setInterval(update_nodes, 1000, svg);
 });
