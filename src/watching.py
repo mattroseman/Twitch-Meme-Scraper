@@ -1,4 +1,4 @@
-import requests, socket, sys, string, json, time, random
+import requests, socket, sys, string, json, time, random, re
 from db_connect import SQLConnection
 from db_connect import NoSQLConnection
 from pymongo import MongoClient
@@ -13,7 +13,7 @@ PORT = 6667
 NICKNAME = 'mroseman_bot'
 PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
 
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 2048
 
 #  connect to twitch irc server
 IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,6 +28,25 @@ send_data('PASS %s' % PASSWORD)
 send_data('NICK %s' % NICKNAME)
 send_data('CAP REQ :twitch.tv/membership')
 
+def get_join_message(channel):
+    """
+    gets all messages received from the IRC server from you joining to the end
+    of the names list
+    """
+    send_data('JOIN #{0}'.format(channel))
+    join_message = []
+    while True:
+        readbuffer = ''
+        readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
+        temp = string.split(readbuffer, '\n')
+        readbuffer = temp.pop()
+        for line in temp:
+            line = string.rstrip(line)
+            join_message.append(line)
+            if 'End of /NAMES list' in line:
+                send_data('PART #{0}'.format(channel))
+                return join_message
+
 def get_users(channel):
     """
     takes in a channel name and gathers the list of users currently signed into
@@ -41,9 +60,21 @@ def get_users(channel):
         pass
     last_api_call = time.time()
     """
+    join_message = get_join_message(channel)
+    print (join_message)
+    names_substring = ':{0}.tmi.twitch.tv 353 {0} = #{1} :'.format(NICKNAME,
+                                                                    channel)
+    users = ''
+    for line in join_message:
+        match = re.search('{0}(.+)'.format(names_substring), line)
+        if match:
+            users += match.group(1) + ' '
+    users = users[:-1].split(' ')
+
     #  print random string to make reading terminal easier
     print (''.join(random.choice(string.ascii_uppercase + string.digits) for _
            in range(5)))
+
     print ('getting users for: ' + channel)
     r = requests.get('https://tmi.twitch.tv/' +
                      'group/user/{0}/chatters'.format(channel)).json()
@@ -68,38 +99,7 @@ def get_users(channel):
             users = users + r['global_mods']
         if r['viewers']:
             users = users + r['viewers']
-        print (users[0])
         return users
-
-"""
-    users = []
-    send_data('JOIN #{0}'.format(channel))
-    send_data('WHO #{0}'.format(channel))
-    #send_data('NAMES #{0}'.format(channel))
-    listing_names = False
-    while True:
-        readbuffer = ''
-        readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
-        temp = string.split(readbuffer, '\n')
-        readbuffer = temp.pop()
-
-        for line in temp:
-            line = string.rstrip(line)
-            print (line)
-            if 'JOIN' in line:
-                listing_names = True
-                continue
-            if 'End of /NAMES list' in line:
-                print ('end of names reached')
-                listing_names = False
-                send_data('PART #{0}'.format(channel))
-                return users
-            if listing_names:
-                line = line.replace(':', '')
-                line = line.split(' ')
-                line = line[5:]
-                users = users + line
-"""
 
 while True:
     #  get list of channels that are being monitored

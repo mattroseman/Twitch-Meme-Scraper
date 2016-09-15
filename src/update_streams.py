@@ -33,7 +33,9 @@ def get_top_streams(game_name):
     r = requests.get('https://api.twitch.tv/kraken/streams',
                      params=payload).json()
     for stream in r['streams']:
-        streams.append(stream['channel']['name'])
+        #  if the stream has enough viewers to be monitored
+        if stream['viewers'] >= viewer_limit:
+            streams.append(stream['channel']['name'])
 
 
 while True:
