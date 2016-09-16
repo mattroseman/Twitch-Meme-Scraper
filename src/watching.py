@@ -1,4 +1,4 @@
-import requests, socket, sys, string, json, time, random, re
+import requests, socket, sys, string, json, time, random, re, sets
 from db_connect import SQLConnection
 from db_connect import NoSQLConnection
 from pymongo import MongoClient
@@ -8,6 +8,7 @@ con = SQLConnection()
 
 nosql_con = NoSQLConnection()
 
+## Constants
 SERVER = 'irc.twitch.tv'
 PORT = 6667
 NICKNAME = 'mroseman_bot'
@@ -15,12 +16,15 @@ PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
 
 BUFFER_SIZE = 2048
 
+join_ttl = 300 #  the time to live for the joining user elements in database
+leave_ttl = 300 #  this is the number of seconds before leave elements are
+                #  removed
+
 #  connect to twitch irc server
 IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 IRC.connect((SERVER, PORT))
 
 last_api_call = time.time() #  time used to limit twitch API calls to one per second
-
 def send_data(command):
     IRC.send(command + '\r\n')
 
@@ -117,28 +121,85 @@ while True:
 
     nosql_con.delete(
             { 
-                "streamname": 
+                'streamname': 
                 {
                     #  delete any documents where the streamname is not present
                     #  in streams
-                    "$nin": streams
+                    '$nin': streams
                 }
             }
     )
 
     for stream in streams:
         users = get_users(stream)
+        users_joining = []
+        users_leaving = []
+        #  really these are an array of json objects
+        joining_json = []
+        leaving_json = []
 
-        print ('updating watching users in the database')
-        #  add these users to this streams document
-        result = nosql_con.update(
-            { "streamname": stream },
-            {
-                "$set": {
-                    "watching": users
+        # figure out any new users and any users that have left
+        old_users = nosql_con.query(
+                { 
+                    'streamname': stream 
                 },
-                "$setOnInsert": {
-                    "streamname": stream
+                {
+                    '_id': False,
+                    'watching':True
+                }
+        )
+        #  if this stream is in the database get joining and leaving users
+        #  TODO possibly do this in the update query used later
+        if old_users[0] is not None:
+            old_users = sets.Set(old_users[0]['watching'])
+            new_users = sets.Set(users)
+            users_joining = new_users.difference(old_users)
+            users_leaving = old_users.difference(new_users)
+
+        #  create the new joining and leave json to add to the database
+        for user in users_joining:
+            joining_json.append(
+                {
+                    'username': user,
+                    'last_updated': time.time()
+                }
+            )
+        for user in users_leaving:
+            leaving_json.append(
+                {
+                    'username': user,
+                    'last_updated': time.time()
+                }
+            )
+
+        #  add these users to this streams document
+        #  TODO make sure the joining and leaving json appends to the list and that
+        #  any elements that have expiredd are removed
+        print ('updating watching users in the database')
+        result = nosql_con.update(
+            { 'streamname': stream },
+            {
+                '$set': {
+                    'watching': users,
+                    'joining': joining_json,
+                    'leaving': leaving_json
+                },
+                '$pull': {
+                    'joining': {
+                        'last_updated': {
+                            '$lte': time.time() - join_ttl
+                        }
+                    },
+                    'leaving': {
+                        'last_updated': {
+                            '$lte': time.time() - leave_ttl
+                        }
+                    }
+                },
+                '$setOnInsert': {
+                    'streamname': stream,
+                    'joining': joining_json,
+                    'leaving': leaving_json
                 }
             }
         )
