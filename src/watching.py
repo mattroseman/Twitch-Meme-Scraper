@@ -3,9 +3,10 @@ from db_connect import SQLConnection
 from db_connect import NoSQLConnection
 from pymongo import MongoClient
 
-print ('Connecting to DataBase')
+print ('connecting to SQL database')
 con = SQLConnection()
 
+print ('connecting to noSQL database')
 nosql_con = NoSQLConnection()
 
 ## Constants
@@ -16,11 +17,15 @@ PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
 
 BUFFER_SIZE = 2048
 
-join_ttl = 300 #  the time to live for the joining user elements in database
+join_ttl = 300  #  the time to live for the joining user elements in database
 leave_ttl = 300 #  this is the number of seconds before leave elements are
                 #  removed
 
+irc_min_users = 100 #  if the number of users from IRC is less then 100 then
+                    # the result is double checked with an API call
+
 #  connect to twitch irc server
+print ('connecting to twitch IRC')
 IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 IRC.connect((SERVER, PORT))
 
@@ -77,14 +82,11 @@ def get_users(channel):
 
     print ('length of users gotten from IRC is {0}'.format(len(users)))
 
-    #  NOTE for now I'm going to assume if the user count is less than 200 It
-    #  may just be OPs and not actual users, so I'll call API
-
     #  print random string to make reading terminal easier
     #print (''.join(random.choice(string.ascii_uppercase + string.digits) for _
     #       in range(5)))
 
-    if len(users) < 200:
+    if len(users) < irc_min_users:
         print ('IRC user count is less than 200, now double checking with ' +
                'API call')
         r = requests.get('https://tmi.twitch.tv/' +
@@ -113,6 +115,7 @@ def get_users(channel):
 
 while True:
     #  get list of channels that are being monitored
+    print ('getting list of channels that are being monitored')
     query = """
     SELECT UserName FROM Users
     WHERE Monitor=True;
@@ -181,9 +184,24 @@ while True:
             {
                 '$set': {
                     'watching': users,
-                    'joining': joining_json,
-                    'leaving': leaving_json
                 },
+                '$push': {
+                    'joining': {
+                        '$each': joining_json,
+                    },
+                    'leaving': {
+                        '$each': leaving_json
+                    }
+                },
+                '$setOnInsert': {
+                    'streamname': stream,
+                }
+            }
+        )
+        #  removing any stale joining or leaving users
+        result = nosql_con.update(
+            { 'streamname': stream },
+            {
                 '$pull': {
                     'joining': {
                         'last_updated': {
@@ -195,11 +213,6 @@ while True:
                             '$lte': time.time() - leave_ttl
                         }
                     }
-                },
-                '$setOnInsert': {
-                    'streamname': stream,
-                    'joining': joining_json,
-                    'leaving': leaving_json
                 }
             }
         )
