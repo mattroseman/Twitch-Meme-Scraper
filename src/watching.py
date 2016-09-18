@@ -1,4 +1,5 @@
-import requests, socket, sys, string, json, time, random, re, sets
+import requests, sys, string, json, time, random, re, sets
+from irc_connect import IRCConnection
 from db_connect import SQLConnection
 from db_connect import NoSQLConnection
 from pymongo import MongoClient
@@ -9,14 +10,10 @@ con = SQLConnection()
 print ('connecting to noSQL database')
 nosql_con = NoSQLConnection()
 
+print ('connecting to IRC server')
+irc = IRCConnection()
+
 ## Constants
-SERVER = 'irc.twitch.tv'
-PORT = 6667
-NICKNAME = 'mroseman_bot'
-PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
-
-BUFFER_SIZE = 2048
-
 join_ttl = 300  #  the time to live for the joining user elements in database
 leave_ttl = 300 #  this is the number of seconds before leave elements are
                 #  removed
@@ -27,77 +24,7 @@ irc_min_users = 100 #  if the number of users from IRC is less then 100 then
 headers = { 'Client-ID': 'sdu5b9af6eoqgkxdkb0qrkd9fgcp6ch'}
 names_substring = ':{0}.tmi.twitch.tv 353 {0} = #{1} :'
 
-#  connect to twitch irc server
-print ('connecting to twitch IRC')
-IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-IRC.connect((SERVER, PORT))
-
 last_api_call = time.time() #  time used to limit twitch API calls to one per second
-
-class IRCBadMessage(Exception):
-    pass
-
-def send_data(command):
-    """
-    sends the given command to the IRC server
-    """
-    IRC.send(command + '\r\n')
-
-send_data('PASS %s' % PASSWORD)
-send_data('NICK %s' % NICKNAME)
-send_data('CAP REQ :twitch.tv/membership')
-
-def parse_line(line):
-    """
-    takes an irc message and parses it into prefix, command and args
-    @return: (prefix, command, args)
-    """
-    prefix = ''
-    if not line:
-        raise IRCBadMessage("Empty line.")
-    if line[0] == ':':
-        prefix, line = line[1:].split(' ', 1)
-    if line.find(' :') != -1:
-        line, trailing = line.split(' ', 1)
-        args = line.split()
-        args.append(trailing)
-    else:
-        args = line.split()
-    command = args.pop(0)
-    if not command or not args:
-        raise IRCBadMessage('Improperly formatted line: {0}'.format(line))
-    return prefix, command, args
-
-#  TODO change this so that it just gets all the users from irc and returns
-#  them as an array
-def get_irc_users(channel):
-    """
-    gets a list of users from the IRC NAMES command
-    @return: an array of users from the irc (may be just OPs)
-    """
-    #  join the IRC channel
-    send_data('JOIN #{0}'.format(channel))
-    users = []
-    while True:
-        readbuffer = ''
-        readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
-        temp = string.split(readbuffer, '\n')
-        readbuffer = temp.pop()
-        for line in temp:
-            line = string.rstrip(line)
-            try:
-                _,command,args = parse_line(line)
-            except IRCBadMessage as e:
-                print (e)
-                return []
-
-            #  if this is a response to NAMES
-            if command == '353':
-                users += ((args[0].split(':', 1))[1].split())
-            if 'End of /NAMES list' in args[0]:
-                print ('test1')
-                send_data('PART #{0}'.format(channel))
-                return users
 
 def get_users(channel):
     """
@@ -107,16 +34,14 @@ def get_users(channel):
     """
     global headers
 
-
     #  if less then a second has passed since the last call wait
     global last_api_call
-    temp_names_substring = names_substring.format(NICKNAME, channel)
     while ((time.time() - last_api_call) < 1):
         pass
     last_api_call = time.time()
 
     print ('getting users for: ' + channel)
-    users = get_irc_users(channel)
+    users = irc.get_channel_users(channel)
     print ('length of users gotten from IRC is {0}'.format(len(users)))
 
     #  print random string to make reading terminal easier
