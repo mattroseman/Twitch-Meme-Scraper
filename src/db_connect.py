@@ -41,7 +41,6 @@ class SQLConnection:
             representing quoted values to insert into the relative query
             (values and sql_query indexes must line up)
         """
-        #  TODO check sql_query and values to see if they are lists
         #  if sql_query is a string
         if isinstance(sql_query, basestring):
             self.cur.execute(sql_query, values)
@@ -81,8 +80,18 @@ class NoSQLConnection:
         self.client = MongoClient(self._hostname, 27017)
         self.db = self.client[self._db_name]
 
+    def query_one(self, criteria=None, projection=None):
+        result = self.db[self._collection].find_one(criteria, projection)
+        return result
+
+    def query(self, criteria=None, projection=None):
+        result = self.db[self._collection].find(criteria, projection)
+        return result
+
     def update(self, criteria, new_values, upsert=True):
-        print (self._collection)
         result = self.db[self._collection].update_one(criteria, new_values, upsert)
         return result
 
+    def delete(self, criteria):
+        result = self.db[self._collection].delete_many(criteria)
+        return result
