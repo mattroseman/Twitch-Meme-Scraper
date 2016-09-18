@@ -9,9 +9,11 @@ stream_limit = 20       # the number of streams to get for each game (as long as
 viewer_limit = 200      # the minimum number of viewers a stream must have to be
                         # monitored
 
+print ('connecting to database')
 con = SQLConnection()
 
 streams = []
+headers = { 'Client-ID': 'sdu5b9af6eoqgkxdkb0qrkd9fgcp6ch'}
 
 def get_top_streams(game_name):
     """
@@ -31,7 +33,7 @@ def get_top_streams(game_name):
                 'language': 'en'
               })
     r = requests.get('https://api.twitch.tv/kraken/streams',
-                     params=payload).json()
+                     params=payload, headers=headers).json()
     for stream in r['streams']:
         #  if the stream has enough viewers to be monitored
         if stream['viewers'] >= viewer_limit:
@@ -42,7 +44,7 @@ while True:
     print ('requesting top {0} games from API'.format(game_limit))
     payload = {'limit': str(game_limit)}
     r = requests.get('https://api.twitch.tv/kraken/games/top',
-                     params=payload).json()
+                     params=payload, headers=headers).json()
 
     for game in r['top']:
         game_name = game['game']['name']

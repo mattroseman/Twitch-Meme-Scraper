@@ -24,26 +24,60 @@ leave_ttl = 300 #  this is the number of seconds before leave elements are
 irc_min_users = 100 #  if the number of users from IRC is less then 100 then
                     # the result is double checked with an API call
 
+headers = { 'Client-ID': 'sdu5b9af6eoqgkxdkb0qrkd9fgcp6ch'}
+names_substring = ':{0}.tmi.twitch.tv 353 {0} = #{1} :'
+
 #  connect to twitch irc server
 print ('connecting to twitch IRC')
 IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 IRC.connect((SERVER, PORT))
 
 last_api_call = time.time() #  time used to limit twitch API calls to one per second
+
+class IRCBadMessage(Exception):
+    pass
+
 def send_data(command):
+    """
+    sends the given command to the IRC server
+    """
     IRC.send(command + '\r\n')
 
 send_data('PASS %s' % PASSWORD)
 send_data('NICK %s' % NICKNAME)
 send_data('CAP REQ :twitch.tv/membership')
 
-def get_join_message(channel):
+def parse_line(line):
     """
-    gets all messages received from the IRC server from you joining to the end
-    of the names list
+    takes an irc message and parses it into prefix, command and args
+    @return: (prefix, command, args)
     """
+    prefix = ''
+    if not line:
+        raise IRCBadMessage("Empty line.")
+    if line[0] == ':':
+        prefix, line = line[1:].split(' ', 1)
+    if line.find(' :') != -1:
+        line, trailing = line.split(' ', 1)
+        args = line.split()
+        args.append(trailing)
+    else:
+        args = line.split()
+    command = args.pop(0)
+    if not command or not args:
+        raise IRCBadMessage('Improperly formatted line: {0}'.format(line))
+    return prefix, command, args
+
+#  TODO change this so that it just gets all the users from irc and returns
+#  them as an array
+def get_irc_users(channel):
+    """
+    gets a list of users from the IRC NAMES command
+    @return: an array of users from the irc (may be just OPs)
+    """
+    #  join the IRC channel
     send_data('JOIN #{0}'.format(channel))
-    join_message = []
+    users = []
     while True:
         readbuffer = ''
         readbuffer = readbuffer + IRC.recv(BUFFER_SIZE)
@@ -51,10 +85,19 @@ def get_join_message(channel):
         readbuffer = temp.pop()
         for line in temp:
             line = string.rstrip(line)
-            join_message.append(line)
-            if 'End of /NAMES list' in line:
+            try:
+                _,command,args = parse_line(line)
+            except IRCBadMessage as e:
+                print (e)
+                return []
+
+            #  if this is a response to NAMES
+            if command == '353':
+                users += ((args[0].split(':', 1))[1].split())
+            if 'End of /NAMES list' in args[0]:
+                print ('test1')
                 send_data('PART #{0}'.format(channel))
-                return join_message
+                return users
 
 def get_users(channel):
     """
@@ -62,24 +105,18 @@ def get_users(channel):
     twitch and watching that channel
     @return: returns an array of strings that are users watching this channel
     """
-    """
+    global headers
+
+
     #  if less then a second has passed since the last call wait
     global last_api_call
+    temp_names_substring = names_substring.format(NICKNAME, channel)
     while ((time.time() - last_api_call) < 1):
         pass
     last_api_call = time.time()
-    """
-    print ('getting users for: ' + channel)
-    join_message = get_join_message(channel)
-    names_substring = ':{0}.tmi.twitch.tv 353 {0} = #{1} :'.format(NICKNAME,
-                                                                    channel)
-    users = ''
-    for line in join_message:
-        match = re.search('{0}(.+)'.format(names_substring), line)
-        if match:
-            users += match.group(1) + ' '
-    users = users[:-1].split(' ')
 
+    print ('getting users for: ' + channel)
+    users = get_irc_users(channel)
     print ('length of users gotten from IRC is {0}'.format(len(users)))
 
     #  print random string to make reading terminal easier
@@ -87,10 +124,11 @@ def get_users(channel):
     #       in range(5)))
 
     if len(users) < irc_min_users:
-        print ('IRC user count is less than 200, now double checking with ' +
-               'API call')
-        r = requests.get('https://tmi.twitch.tv/' +
-                        'group/user/{0}/chatters'.format(channel)).json()
+        print (('IRC user count is less than {0}, now double checking with ' +
+                'API call').format(irc_min_users))
+        r = requests.get(('https://tmi.twitch.tv/' +
+                          'group/user/{0}/chatters').format(channel),
+                         headers=headers).json()
         users = []
 
         if r is None:
@@ -113,14 +151,24 @@ def get_users(channel):
                     users = users + r['viewers']
     return users
 
-while True:
+def get_monitored_streams():
     #  get list of channels that are being monitored
-    print ('getting list of channels that are being monitored')
     query = """
     SELECT UserName FROM Users
     WHERE Monitor=True;
     """
-    streams = map(lambda x: x.get('UserName'), con.query(query))
+    return map(lambda x: x.get('UserName'), con.query(query))
+
+while True:
+    print("""
+
+    -------------------------------------------------------
+    streams updated now starting from beginning 
+    -------------------------------------------------------
+
+    """)
+
+    streams = get_monitored_streams()
 
     nosql_con.delete(
             { 
@@ -152,12 +200,16 @@ while True:
                 }
         )
         #  if this stream is in the database get joining and leaving users
-        #  TODO possibly do this in the update query used later
-        if old_users[0] is not None:
+        if old_users.count() == 1:
             old_users = sets.Set(old_users[0]['watching'])
             new_users = sets.Set(users)
+            #  users in new_users that aren't in old_users
             users_joining = new_users.difference(old_users)
+            #  users in old_users that are no longer in new_users
             users_leaving = old_users.difference(new_users)
+
+        print ('\njoining users in {0}: {1}'.format(stream, users_joining))
+        print ('leaving users in {0}: {1}\n'.format(stream, users_leaving))
 
         #  create the new joining and leave json to add to the database
         for user in users_joining:
