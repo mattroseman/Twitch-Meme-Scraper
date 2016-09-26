@@ -41,7 +41,11 @@ class IRCConnection:
         if not line:
             raise IRCBadMessage("Empty line.")
         if line[0] == ':':
-            prefix, line = line[1:].split(' ', 1)
+            try:
+                prefix, line = line[1:].split(' ', 1)
+            except ValueError as e:
+                print (line)
+                raise e
         if line.find(' :') != -1:
             line, trailing = line.split(' ', 1)
             args = line.split()

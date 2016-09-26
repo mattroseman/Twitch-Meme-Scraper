@@ -1,5 +1,6 @@
-import requests, sys, string, json, time, random, re, sets
+import sys, string, json, time, random, re, sets
 from irc_connect import IRCConnection
+from api_connect import APIConnection
 from db_connect import SQLConnection
 from db_connect import NoSQLConnection
 from pymongo import MongoClient
@@ -13,6 +14,9 @@ nosql_con = NoSQLConnection()
 print ('connecting to IRC server')
 irc = IRCConnection()
 
+print ('creating API connection')
+api = APIConnection()
+
 ## Constants
 join_ttl = 300  #  the time to live for the joining user elements in database
 leave_ttl = 300 #  this is the number of seconds before leave elements are
@@ -20,9 +24,6 @@ leave_ttl = 300 #  this is the number of seconds before leave elements are
 
 irc_min_users = 100 #  if the number of users from IRC is less then 100 then
                     # the result is double checked with an API call
-
-headers = { 'Client-ID': 'sdu5b9af6eoqgkxdkb0qrkd9fgcp6ch'}
-names_substring = ':{0}.tmi.twitch.tv 353 {0} = #{1} :'
 
 last_api_call = time.time() #  time used to limit twitch API calls to one per second
 
@@ -51,29 +52,8 @@ def get_users(channel):
     if len(users) < irc_min_users:
         print (('IRC user count is less than {0}, now double checking with ' +
                 'API call').format(irc_min_users))
-        r = requests.get(('https://tmi.twitch.tv/' +
-                          'group/user/{0}/chatters').format(channel),
-                         headers=headers).json()
-        users = []
+        users = api.get_users(channel)
 
-        if r is None:
-            print ('null response gotten')
-        else:
-            usercount = r['chatter_count']
-            print ('usercount = {0}'.format(usercount))
-            if (usercount > 0):
-                r = r['chatters']
-
-                if r['moderators']:
-                    users = r['moderators']
-                if r['staff']:
-                    users = users + r['staff']
-                if r['admins']:
-                    users = users + r['admins']
-                if r['global_mods']:
-                    users = users + r['global_mods']
-                if r['viewers']:
-                    users = users + r['viewers']
     return users
 
 def get_monitored_streams():
@@ -108,6 +88,10 @@ while True:
 
     for stream in streams:
         users = get_users(stream)
+        #  if the users list is empty something wen't wrong
+        if len(users) == 0:
+            continue
+
         users_joining = []
         users_leaving = []
         #  really these are an array of json objects
