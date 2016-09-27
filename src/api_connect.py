@@ -1,6 +1,5 @@
-import requests, string, time
+import sys, requests, string, time, ConfigParser
 
-headers = { 'Client-ID': 'sdu5b9af6eoqgkxdkb0qrkd9fgcp6ch'}
 viewer_limit = 200 #  the mimnimum number of viewers a stream must have to be
                    #  monitored
 timeout = 10 #  the number of seconds that will be waited if a 503 response is
@@ -11,8 +10,21 @@ class APIBadRequest(Exception):
     pass
 
 class APIConnection:
+    config_file = 'api.cfg'
+    section_name = 'Connection Authentication'
 
     def __init__(self):
+        config = ConfigParser.RawConfigParser()
+        config.read(self.config_file)
+
+        try:
+            self._client_id = config.get(self.section_name, 'client_id')
+            self.headers= { 'Client-ID': self._client_id }
+        except ConfigParser.NoOptionError as e:
+            print ('one of the options in the config file has no value\n{0}:' +
+                   '{1}').format(e.errno, e.strerror)
+            sys.exit()
+
         self.log = open('watching_log.txt', 'w')
 
     def _send_request(self, request, params=None):
@@ -23,7 +35,7 @@ class APIConnection:
         """
         for i in xrange(0,num_tries):
             result = requests.get(request, params=params,
-                                  headers=headers)
+                                  headers=self.headers)
             if self._valid_result(result):
                 return result.json()
             else:
