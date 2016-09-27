@@ -1,10 +1,10 @@
-import socket, string
+import socket, string, ConfigParser
 
 ## Constants
 SERVER = 'irc.twitch.tv'
 PORT = 6667
 NICKNAME = 'mroseman_bot'
-PASSWORD = 'oauth:1a6m7cnaoispip8l00zy0h9nv2hten'
+PASSWORD = ''
 
 BUFFER_SIZE = 2048
 
@@ -17,7 +17,20 @@ class IRCConnection:
     different channels
     """
 
+    config_file = 'irc.cfg'
+    section_name = 'Connection Authentication'
+
     def __init__(self):
+        config = ConfigParser.RawConfigParser()
+        config.read(self.config_file)
+
+        try:
+            PASSWORD = config.get(self.section_name, 'oauth')
+        except ConfigParser.NoOptionError as e:
+            print ('one of the options in the config file has no value\n{0}:' +
+                   '{1}').format(e.errno, e.strerror)
+            sys.exit()
+
         self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.IRC.connect((SERVER, PORT))
 
@@ -71,6 +84,7 @@ class IRCConnection:
             temp = string.split(readbuffer, '\n')
             readbuffer = temp.pop()
             for line in temp:
+                print (line)
                 line = string.rstrip(line)
                 try:
                     _,command,args = self._parse_line(line)
