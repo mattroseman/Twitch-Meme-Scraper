@@ -84,10 +84,9 @@ class DataBot(Thread):
 
         #  insert this specific message to the Messages table
         query = """
-        INSERT INTO Messages (StreamerID, UserID, Message, Time, GameID)
-        VALUES ('{0}', (SELECT ID FROM Users WHERE UserName='{1}'), %(msg)s, NOW(),
-        '{2}');
-        """.format(self.channel_id, username, '1')
+        INSERT INTO Messages (StreamerID, UserID, Message, Time)
+        VALUES ('{0}', (SELECT ID FROM Users WHERE UserName='{1}'), %(msg)s, NOW());
+        """.format(self.channel_id, username)
         self.con.query(query, {'msg':msg})
 
         # optionally print the messages

@@ -1,8 +1,8 @@
--- MySQL dump 10.16  Distrib 10.1.14-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.16  Distrib 10.1.19-MariaDB, for Linux (x86_64)
 --
--- Host: localhost    Database: twitch_08152016_01
+-- Host: localhost    Database: localhost
 -- ------------------------------------------------------
--- Server version	10.1.14-MariaDB
+-- Server version	10.1.19-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -41,19 +41,34 @@ CREATE TABLE `Messages` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `UserID` int(11) NOT NULL,
   `StreamerID` int(11) NOT NULL,
-  `GameID` int(11) NOT NULL,
   `Message` mediumtext COLLATE utf8_bin NOT NULL,
   `Time` datetime NOT NULL,
   PRIMARY KEY (`ID`),
   KEY `UserID` (`UserID`),
   KEY `StreamerID` (`StreamerID`),
-  KEY `GameID` (`GameID`),
   KEY `Time` (`Time`),
   KEY `Message` (`Message`(100)),
   CONSTRAINT `Messages_ibfk_4` FOREIGN KEY (`UserID`) REFERENCES `Users` (`ID`),
-  CONSTRAINT `Messages_ibfk_5` FOREIGN KEY (`StreamerID`) REFERENCES `Users` (`ID`),
-  CONSTRAINT `Messages_ibfk_6` FOREIGN KEY (`GameID`) REFERENCES `Games` (`ID`)
+  CONSTRAINT `Messages_ibfk_5` FOREIGN KEY (`StreamerID`) REFERENCES `Users` (`ID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2005289 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `Playing`
+--
+
+DROP TABLE IF EXISTS `Playing`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `Playing` (
+  `StreamerID` int(11) NOT NULL,
+  `Time` datetime NOT NULL,
+  `GameID` int(11) NOT NULL,
+  PRIMARY KEY (`StreamerID`,`Time`),
+  KEY `GameID` (`GameID`),
+  CONSTRAINT `Playing_ibfk_1` FOREIGN KEY (`StreamerID`) REFERENCES `Users` (`ID`),
+  CONSTRAINT `Playing_ibfk_2` FOREIGN KEY (`GameID`) REFERENCES `Games` (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -102,10 +117,4 @@ CREATE TABLE `Watching` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
---
--- Matt temporary game entry
---
-INSERT IGNORE INTO Games (ID, GameName)
-    VALUES (1, 'TestGame');
-
--- Dump completed on 2016-08-20 11:46:20
+-- Dump completed on 2016-12-02 20:17:30
